@@ -65,25 +65,26 @@
     }
     .btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
 
-    /* Top 2 Main Tabs */
+    /* Top 3 Main Tabs */
     .main-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
       background: var(--card, #1e293b);
       padding: 6px;
       border-radius: 14px;
       border: 1px solid var(--border, #334155);
     }
     .tab-btn {
-      padding: 11px 16px;
+      padding: 11px 8px;
       border-radius: 10px;
       border: none;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       background: transparent;
       color: var(--muted-foreground, #94a3b8);
       text-align: center;
+      white-space: nowrap;
     }
     .tab-btn.active {
       background: #0284c7;
@@ -91,7 +92,7 @@
       box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
     }
 
-    /* Segmented Toggle inside Tab 2 (인벤토리 <-> 사야 할 것 + 합계) */
+    /* Segmented Toggle inside Tab 1 (인벤토리 <-> 쇼핑 리스트) */
     .mode-toggle-wrap {
       display: flex;
       justify-content: space-between;
@@ -249,6 +250,87 @@
       gap: 12px;
     }
     .total-price { font-size: 26px; font-weight: 800; color: #38bdf8; }
+
+    /* Chat Tab Styles */
+    .chat-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .chip-btn {
+      font-size: 12px;
+      padding: 6px 11px;
+      border-radius: 99px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #7dd3fc;
+      font-weight: 600;
+    }
+    .chip-btn:hover {
+      background: rgba(56, 189, 248, 0.22);
+    }
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 520px;
+      overflow-y: auto;
+      padding: 4px 2px 12px 2px;
+      margin-bottom: 12px;
+    }
+    .chat-bubble-user {
+      align-self: flex-end;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: 16px 16px 4px 16px;
+      max-width: 85%;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .chat-bubble-bot {
+      align-self: flex-start;
+      background: var(--background, #0f172a);
+      border: 1px solid var(--border, #334155);
+      color: var(--foreground, #f8fafc);
+      padding: 14px;
+      border-radius: 16px 16px 16px 4px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-bot-text {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .chat-shop-box {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-skip-note {
+      font-size: 12px;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+    .chat-ai-note {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      background: rgba(2, 132, 199, 0.12);
+      border-left: 3px solid #38bdf8;
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -261,33 +343,16 @@
       <div class="btn-group" id="day-buttons"></div>
     </div>
 
-    <!-- 2개 메인 탭: | 🥬 인벤토리 ⇄ 🛒 쇼핑 리스트 | 📸 사진 올리기 | -->
+    <!-- 3개 메인 탭: | 🥬 인벤토리·쇼핑 | 💬 장보기 챗 | 📸 사진 올리기 | -->
     <div class="main-tabs">
-      <button id="tab-main-btn" type="button" class="tab-btn active">🥬 인벤토리 ⇄ 🛒 쇼핑 리스트</button>
+      <button id="tab-main-btn" type="button" class="tab-btn active">🥬 인벤토리·쇼핑</button>
+      <button id="tab-chat-btn" type="button" class="tab-btn">💬 장보기 챗</button>
       <button id="tab-upload-btn" type="button" class="tab-btn">📸 사진 올리기</button>
     </div>
 
     <div id="toast" class="toast"></div>
 
-    <!-- TAB 1: 사진 올리기 -->
-    <div id="view-upload" class="card hidden">
-      <label class="upload-box">
-        <span style="font-size: 34px;">📷</span>
-        <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
-        <span id="upload-status-sub" class="sub">사진을 올리면 인벤토리로 자동 이동합니다</span>
-        <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
-      </label>
-
-      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 1클릭 테스트:</div>
-      <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
-
-      <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
-        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 영수증 DB 적재 기록 (언제 · 어디서 · 품목 · 금액)</div>
-        <div id="receipt-db-log" class="item-list"></div>
-      </div>
-    </div>
-
-    <!-- TAB 2: 인벤토리 및 쇼핑 리스트 -->
+    <!-- TAB 1: 인벤토리 및 쇼핑 리스트 -->
     <div id="view-main" class="card">
       <div class="mode-toggle-wrap">
         <div class="seg-toggle">
@@ -320,6 +385,37 @@
             <button id="btn-order-now" type="button" class="btn-order">🚀 주문하기</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 💬 장보기 챗 (자연어 시점·소진 질의 -> 즉시 쇼핑리스트 카드 표시) -->
+    <div id="view-chat" class="card hidden">
+      <div class="sub" style="font-weight: 700; margin-bottom: 8px;">💡 원클릭 추천 질문 (누르면 바로 쇼핑 리스트가 나옵니다):</div>
+      <div id="chat-quick-chips" class="chat-chips"></div>
+
+      <div id="chat-messages" class="chat-messages"></div>
+
+      <div class="input-row" style="margin-bottom: 0;">
+        <input id="input-chat-query" type="text" placeholder="예: 오늘 장본지 3일 됐는데, 뭐 사야돼?" />
+        <button id="btn-send-chat" type="button" class="btn-primary">전송</button>
+      </div>
+    </div>
+
+    <!-- TAB 3: 사진 올리기 -->
+    <div id="view-upload" class="card hidden">
+      <label class="upload-box">
+        <span style="font-size: 34px;">📷</span>
+        <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
+        <span id="upload-status-sub" class="sub">사진을 올리면 인벤토리로 자동 이동합니다</span>
+        <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
+      </label>
+
+      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 1클릭 테스트:</div>
+      <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
+
+      <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 영수증 DB 적재 기록 (언제 · 어디서 · 품목 · 금액)</div>
+        <div id="receipt-db-log" class="item-list"></div>
       </div>
     </div>
 
@@ -464,6 +560,13 @@
         }
       ];
 
+      var CHAT_QUICK_PROMPTS = [
+        "오늘 장본지 3일 됐는데, 뭐 사야돼?",
+        "장본지 7일 지났는데 뭐 사야돼?",
+        "오늘 기준으로 당장 사야 할 것만 보여줘",
+        "두부 다 먹었어, 쇼핑리스트에 추가해줘"
+      ];
+
       var STORAGE_KEY = "nuvori_poc_state_v2";
 
       function loadInitialState() {
@@ -483,7 +586,7 @@
           }
         } catch (e) {}
         return {
-          activeTab: "main",       // "upload" | "main"
+          activeTab: "main",       // "main" | "chat" | "upload"
           subMode: "inventory",    // "inventory" | "buy"
           dayOffset: 0,
           items: getDefaultItems(),
@@ -532,7 +635,6 @@
         var remCycle = Math.max(1.0, cycleDays * 0.55);
 
         for (var d = 1; d <= elapsedDays; d++) {
-          // Semi-Markov Weibull-like increasing hazard rate h(d) with dwell time
           var h21 = Math.min(0.85, Math.max(0.05, (1.0 / halfCycle) * (1.0 + 0.35 * (d / halfCycle))));
           var h10 = Math.min(0.90, Math.max(0.04, (1.0 / remCycle) * Math.pow(Math.max(0.2, d / cycleDays), 1.6)));
 
@@ -540,7 +642,6 @@
           var nextS1 = bS1 * (1.0 - h10) + bS2 * h21;
           var nextS0 = bS0 + bS1 * h10;
 
-          // 구매 미관측(O_d = 0) 조건부 베이즈 우도 보정 (Likelihood: P(O=0|S2,S1)=0.98, P(O=0|S0)=0.72)
           var l2 = nextS2 * 0.98;
           var l1 = nextS1 * 0.98;
           var l0 = nextS0 * 0.72;
@@ -557,7 +658,6 @@
       function evaluateItem(item) {
         var elapsed = Math.max(0, state.dayOffset - item.boughtDay);
         var belief = computeHsmmBelief(elapsed, Math.max(1, item.cycleDays));
-        // Asymmetric Newsvendor Critical Fractile + Duration Guard
         var isShort = Boolean(item.manualNeedToBuy) ||
           (belief.pDepleted >= 0.24) ||
           (elapsed >= Math.round(item.cycleDays * 0.75));
@@ -608,7 +708,7 @@
         return false;
       }
 
-      function ingestReceiptToDB(receiptObj, sourceLabel) {
+      function ingestReceiptToDB(receiptObj) {
         var storeName = receiptObj.storeName || "마트";
         var todayIso = getTodayIso();
         var purchaseDate = receiptObj.purchaseDate || todayIso;
@@ -740,6 +840,14 @@
           { d: 7, label: "+7일" },
           { d: 14, label: "+14일" }
         ];
+        var hasCustom = true;
+        for (var k = 0; k < presets.length; k++) {
+          if (presets[k].d === state.dayOffset) hasCustom = false;
+        }
+        if (hasCustom) {
+          presets.push({ d: state.dayOffset, label: "+" + state.dayOffset + "일" });
+        }
+
         for (var i = 0; i < presets.length; i++) {
           (function(p) {
             var active = state.dayOffset === p.d;
@@ -802,6 +910,30 @@
         }
       }
 
+      function executeOrderNow() {
+        var orderedCount = 0;
+        var totalPaid = 0.0;
+        for (var i = 0; i < state.items.length; i++) {
+          var it = state.items[i];
+          var ev = evaluateItem(it);
+          if (ev.isShort && it.checkedForOrder !== false) {
+            it.boughtDay = state.dayOffset;
+            it.manualNeedToBuy = false;
+            it.isManuallyAdded = false;
+            orderedCount++;
+            totalPaid += it.price;
+          }
+        }
+        if (orderedCount === 0) {
+          showToast("주문할 품목이 없습니다.");
+          return;
+        }
+        state.activeTab = "main";
+        state.subMode = "inventory";
+        showToast("🎉 주문 완료! " + orderedCount + "개 품목($" + totalPaid.toFixed(2) + ")이 '오늘 구매'로 채워졌습니다.");
+        renderAll();
+      }
+
       function renderMainView() {
         var invContainer = document.getElementById("subview-inventory");
         var buyList = document.getElementById("buy-list");
@@ -825,7 +957,6 @@
             savedMoney += item.price;
           }
 
-          // Render row in Inventory Subview
           var card = el("div", "item-card");
           var left = el("div", "item-left");
           left.appendChild(createThumbImg(item));
@@ -843,7 +974,6 @@
           invContainer.appendChild(card);
         }
 
-        // Update toggle buttons & summary badge
         var btnInv = document.getElementById("toggle-inventory");
         var btnBuy = document.getElementById("toggle-buy");
         btnInv.textContent = "🥬 인벤토리 (" + state.items.length + ")";
@@ -866,7 +996,6 @@
           badge.textContent = "✅ 안 사도 되는 " + skipCount + "개로 $" + savedMoney.toFixed(2) + " 절약";
         }
 
-        // Render rows in Buy Subview
         var orderTotal = 0.0;
         if (buyEntries.length === 0) {
           var empty = el("div", "sub", "쇼핑 리스트에 품목이 없습니다. 위 입력창에서 직접 추가하거나 [+7일]을 눌러보세요.");
@@ -914,23 +1043,274 @@
         saveState();
       }
 
-      function renderAll() {
-        var tabUploadBtn = document.getElementById("tab-upload-btn");
-        var tabMainBtn = document.getElementById("tab-main-btn");
-        var viewUpload = document.getElementById("view-upload");
-        var viewMain = document.getElementById("view-main");
+      // ====================================================================
+      // 💬 장보기 챗 (Natural-Language Query -> HSMM Time Shift + Shopping List Card)
+      // ====================================================================
+      function extractChatIntent(rawText) {
+        var text = String(rawText || "").trim();
+        var detectedDays = null;
 
-        if (state.activeTab === "upload") {
-          tabUploadBtn.className = "tab-btn active";
-          tabMainBtn.className = "tab-btn";
-          viewUpload.classList.remove("hidden");
-          viewMain.classList.add("hidden");
-        } else {
-          tabUploadBtn.className = "tab-btn";
-          tabMainBtn.className = "tab-btn active";
-          viewUpload.classList.add("hidden");
-          viewMain.classList.remove("hidden");
+        var dayMatch = text.match(/(\d+)\s*일\s*(됐|되|지났|경과|뒤|후|차|째)?/);
+        var weekMatch = text.match(/(\d+)\s*주\s*(됐|되|지났|경과|뒤|후|차|째)?/);
+        if (dayMatch) {
+          detectedDays = Math.min(60, Math.max(0, parseInt(dayMatch[1], 10)));
+        } else if (weekMatch) {
+          detectedDays = Math.min(60, Math.max(0, parseInt(weekMatch[1], 10) * 7));
+        } else if (text.indexOf("일주일") !== -1) {
+          detectedDays = 7;
+        } else if (text.indexOf("보름") !== -1 || text.indexOf("2주") !== -1) {
+          detectedDays = 14;
+        } else if (text.indexOf("사흘") !== -1) {
+          detectedDays = 3;
+        } else if (text.indexOf("이틀") !== -1) {
+          detectedDays = 2;
+        } else if (text.indexOf("나흘") !== -1) {
+          detectedDays = 4;
+        } else if (text.indexOf("닷새") !== -1) {
+          detectedDays = 5;
+        } else if (text.indexOf("열흘") !== -1) {
+          detectedDays = 10;
+        } else if (text.indexOf("오늘 기준") !== -1 || text.indexOf("당장") !== -1) {
+          detectedDays = 0;
         }
+
+        // Check if user says an item ran out ("두부 다 먹었어", "삼겹살 추가해줘", etc.)
+        var depletedItemName = null;
+        var asksDepleted = (
+          text.indexOf("다 먹") !== -1 ||
+          text.indexOf("떨어졌") !== -1 ||
+          text.indexOf("없어") !== -1 ||
+          text.indexOf("추가") !== -1 ||
+          text.indexOf("사야") !== -1 && text.indexOf("뭐") === -1 && text.indexOf("무엇") === -1
+        );
+        if (asksDepleted) {
+          for (var i = 0; i < state.items.length; i++) {
+            var shortNoun = state.items[i].name.split(" ")[0];
+            if (text.indexOf(state.items[i].name) !== -1 || (shortNoun.length >= 2 && text.indexOf(shortNoun) !== -1)) {
+              state.items[i].manualNeedToBuy = true;
+              state.items[i].isManuallyAdded = true;
+              state.items[i].checkedForOrder = true;
+              depletedItemName = state.items[i].name;
+              break;
+            }
+          }
+        }
+
+        return {
+          detectedDays: detectedDays,
+          depletedItemName: depletedItemName
+        };
+      }
+
+      function buildShoppingListBubble(userQuery, intentResult) {
+        var botBubble = el("div", "chat-bubble-bot");
+
+        var dayLabel = state.dayOffset === 0 ? "오늘(기준일)" : ("장본 지 +" + state.dayOffset + "일 경과");
+        var buyEntries = [];
+        var skipEntries = [];
+        var totalCost = 0.0;
+        var savedCost = 0.0;
+
+        for (var i = 0; i < state.items.length; i++) {
+          var item = state.items[i];
+          var ev = evaluateItem(item);
+          if (ev.isShort) {
+            buyEntries.push({ item: item, ev: ev });
+            totalCost += item.price;
+          } else {
+            skipEntries.push({ item: item, ev: ev });
+            savedCost += item.price;
+          }
+        }
+
+        var headerMsg = "";
+        if (intentResult.depletedItemName) {
+          headerMsg = "✅ '" + intentResult.depletedItemName + "' 품목을 쇼핑 리스트에 반영했습니다! ";
+        }
+        if (intentResult.detectedDays !== null) {
+          headerMsg += "⏱️ 시점을 [" + dayLabel + "]로 이동해 소진 예측(HSMM)을 계산한 결과, 사야 할 품목은 " + buyEntries.length + "개($" + totalCost.toFixed(2) + ")입니다:";
+        } else {
+          headerMsg += "📊 현재 [" + dayLabel + "] 기준 사야 할 쇼핑 리스트는 " + buyEntries.length + "개($" + totalCost.toFixed(2) + ")입니다:";
+        }
+        botBubble.appendChild(el("div", "chat-bot-text", headerMsg));
+
+        var shopBox = el("div", "chat-shop-box");
+        if (buyEntries.length === 0) {
+          shopBox.appendChild(el("div", "sub", "현재 사야 할 부족 품목이 없습니다! 모든 식재료가 집에 충분합니다."));
+        } else {
+          for (var b = 0; b < buyEntries.length; b++) {
+            var entry = buyEntries[b];
+            var row = el("div", "item-card");
+            row.style.padding = "9px 12px";
+
+            var left = el("div", "item-left");
+            left.appendChild(createThumbImg(entry.item));
+            var info = el("div", "item-info");
+            info.appendChild(el("div", "item-name", entry.item.name));
+            var depPct = Math.round(entry.ev.belief.pDepleted * 100);
+            var subDesc = formatDaysAgo(entry.item, entry.ev.elapsed) + " · 고갈확률 " + depPct + "% (주기 " + entry.item.cycleDays + "일)";
+            info.appendChild(el("div", "item-days", subDesc));
+            left.appendChild(info);
+            row.appendChild(left);
+
+            var right = el("div", "btn-group");
+            right.appendChild(el("span", "pill pill-buy", "🛒 사야 한다"));
+            right.appendChild(el("span", "item-name", "$" + entry.item.price.toFixed(2)));
+            row.appendChild(right);
+
+            shopBox.appendChild(row);
+          }
+        }
+
+        if (skipEntries.length > 0) {
+          var skipNames = skipEntries.map(function(s) { return s.item.name; }).join(", ");
+          shopBox.appendChild(
+            el(
+              "div",
+              "chat-skip-note",
+              "✅ 집에 아직 충분해서 안 사도 되는 품목 (" + skipEntries.length + "개 · $" + savedCost.toFixed(2) + " 절약): " + skipNames
+            )
+          );
+        }
+
+        var footerRow = el("div", "header-row");
+        footerRow.style.marginTop = "4px";
+        footerRow.appendChild(el("div", "item-name", "🛒 쇼핑 리스트 합계: $" + totalCost.toFixed(2)));
+
+        var actionGroup = el("div", "btn-group");
+        var btnGoBuyTab = el("button", "btn-sm", "🛒 쇼핑 리스트 탭 열기");
+        btnGoBuyTab.type = "button";
+        btnGoBuyTab.addEventListener("click", function() {
+          state.activeTab = "main";
+          state.subMode = "buy";
+          renderAll();
+        });
+        actionGroup.appendChild(btnGoBuyTab);
+
+        if (buyEntries.length > 0) {
+          var btnQuickOrder = el("button", "btn-primary btn-sm", "🚀 바로 주문 완료");
+          btnQuickOrder.type = "button";
+          btnQuickOrder.addEventListener("click", function() {
+            executeOrderNow();
+          });
+          actionGroup.appendChild(btnQuickOrder);
+        }
+        footerRow.appendChild(actionGroup);
+        shopBox.appendChild(footerRow);
+
+        botBubble.appendChild(shopBox);
+
+        var aiNote = el(
+          "div",
+          "chat-ai-note",
+          "💡 소비 팁: 신선채소(시금치 등)는 구매 후 4~5일 내 부패 위험이 높으므로 이번 주 집밥 횟수가 적다면 구매를 미루고, 집에 남은 두부·파스타면을 먼저 소진하세요."
+        );
+        botBubble.appendChild(aiNote);
+
+        // Optional async enrichment via Netlify Gemini endpoint
+        if (userQuery) {
+          var invSummary = state.items.map(function(it) {
+            var ev = evaluateItem(it);
+            return {
+              name: it.name,
+              elapsed: ev.elapsed,
+              cycleDays: it.cycleDays,
+              pDepleted: Math.round(ev.belief.pDepleted * 100),
+              isShort: ev.isShort
+            };
+          });
+          fetch("/.netlify/functions/chat-advisor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userQuery,
+              dayOffset: state.dayOffset,
+              inventorySummary: invSummary
+            })
+          })
+          .then(function(res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function(data) {
+            if (data && data.reply) {
+              aiNote.textContent = "🤖 AI 코치: " + data.reply;
+            }
+          })
+          .catch(function() {});
+        }
+
+        return botBubble;
+      }
+
+      function handleChatSubmit(customText) {
+        var input = document.getElementById("input-chat-query");
+        var text = typeof customText === "string" ? customText : input.value.trim();
+        if (!text) return;
+        if (typeof customText !== "string") {
+          input.value = "";
+        }
+
+        var msgContainer = document.getElementById("chat-messages");
+        msgContainer.appendChild(el("div", "chat-bubble-user", text));
+
+        var intent = extractChatIntent(text);
+        if (intent.detectedDays !== null) {
+          state.dayOffset = intent.detectedDays;
+        }
+
+        renderDayButtons();
+        renderMainView();
+
+        var botReplyBubble = buildShoppingListBubble(text, intent);
+        msgContainer.appendChild(botReplyBubble);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+
+      function initChatView() {
+        var chipsWrap = document.getElementById("chat-quick-chips");
+        chipsWrap.replaceChildren();
+        for (var i = 0; i < CHAT_QUICK_PROMPTS.length; i++) {
+          (function(promptText) {
+            var chip = el("button", "chip-btn", "💬 " + promptText);
+            chip.type = "button";
+            chip.addEventListener("click", function() {
+              handleChatSubmit(promptText);
+            });
+            chipsWrap.appendChild(chip);
+          })(CHAT_QUICK_PROMPTS[i]);
+        }
+
+        var msgContainer = document.getElementById("chat-messages");
+        if (msgContainer.childNodes.length === 0) {
+          var welcome = el("div", "chat-bubble-bot");
+          welcome.appendChild(
+            el(
+              "div",
+              "chat-bot-text",
+              "안녕하세요! 장본 지 며칠 지났는지 말씀하시거나 \"오늘 장본지 3일 됐는데, 뭐 사야돼?\"처럼 물어보시면 3-State HSMM 소진 예측을 돌려 사야 할 쇼핑 리스트를 바로 보여드립니다."
+            )
+          );
+          msgContainer.appendChild(welcome);
+        }
+      }
+
+      function renderAll() {
+        var tabMainBtn = document.getElementById("tab-main-btn");
+        var tabChatBtn = document.getElementById("tab-chat-btn");
+        var tabUploadBtn = document.getElementById("tab-upload-btn");
+
+        var viewMain = document.getElementById("view-main");
+        var viewChat = document.getElementById("view-chat");
+        var viewUpload = document.getElementById("view-upload");
+
+        tabMainBtn.className = state.activeTab === "main" ? "tab-btn active" : "tab-btn";
+        tabChatBtn.className = state.activeTab === "chat" ? "tab-btn active" : "tab-btn";
+        tabUploadBtn.className = state.activeTab === "upload" ? "tab-btn active" : "tab-btn";
+
+        viewMain.classList.toggle("hidden", state.activeTab !== "main");
+        viewChat.classList.toggle("hidden", state.activeTab !== "chat");
+        viewUpload.classList.toggle("hidden", state.activeTab !== "upload");
 
         renderDayButtons();
         renderSampleButtons();
@@ -939,13 +1319,18 @@
       }
 
       // Wire Tabs & Toggle
-      document.getElementById("tab-upload-btn").addEventListener("click", function() {
-        state.activeTab = "upload";
+      document.getElementById("tab-main-btn").addEventListener("click", function() {
+        state.activeTab = "main";
         renderAll();
       });
 
-      document.getElementById("tab-main-btn").addEventListener("click", function() {
-        state.activeTab = "main";
+      document.getElementById("tab-chat-btn").addEventListener("click", function() {
+        state.activeTab = "chat";
+        renderAll();
+      });
+
+      document.getElementById("tab-upload-btn").addEventListener("click", function() {
+        state.activeTab = "upload";
         renderAll();
       });
 
@@ -957,6 +1342,17 @@
       document.getElementById("toggle-buy").addEventListener("click", function() {
         state.subMode = "buy";
         renderMainView();
+      });
+
+      document.getElementById("btn-send-chat").addEventListener("click", function() {
+        handleChatSubmit();
+      });
+
+      document.getElementById("input-chat-query").addEventListener("keydown", function(ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          handleChatSubmit();
+        }
       });
 
       function compressImageToBase64(file, callback) {
@@ -1068,28 +1464,7 @@
         }
       });
 
-      document.getElementById("btn-order-now").addEventListener("click", function() {
-        var orderedCount = 0;
-        var totalPaid = 0.0;
-        for (var i = 0; i < state.items.length; i++) {
-          var it = state.items[i];
-          var ev = evaluateItem(it);
-          if (ev.isShort && it.checkedForOrder !== false) {
-            it.boughtDay = state.dayOffset;
-            it.manualNeedToBuy = false;
-            it.isManuallyAdded = false;
-            orderedCount++;
-            totalPaid += it.price;
-          }
-        }
-        if (orderedCount === 0) {
-          showToast("주문할 품목이 없습니다.");
-          return;
-        }
-        state.subMode = "inventory";
-        showToast("🎉 주문 완료! " + orderedCount + "개 품목($" + totalPaid.toFixed(2) + ")이 '오늘 구매'로 채워졌습니다.");
-        renderAll();
-      });
+      document.getElementById("btn-order-now").addEventListener("click", executeOrderNow);
 
       document.getElementById("btn-copy-list").addEventListener("click", function() {
         var lines = ["[Nuvori 구매 리스트]"];
@@ -1109,6 +1484,7 @@
         showToast("📋 구매 리스트가 복사되었습니다!");
       });
 
+      initChatView();
       renderAll();
     })();
   </script>
