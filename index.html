@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nuvori" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Nuvori — 스마트 장보기</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background: var(--background, #0f172a);
+      color: var(--foreground, #f8fafc);
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
+      line-height: 1.45;
+    }
+    .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    .card {
+      background: var(--card, #1e293b);
+      border: 1px solid var(--border, #334155);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 { font-size: 19px; font-weight: 800; }
+    .sub { font-size: 13px; color: var(--muted-foreground, #94a3b8); }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 8px 14px;
+      border: 1px solid var(--border, #334155);
+      background: var(--secondary, #334155);
+      color: var(--foreground, #f8fafc);
+      transition: all 0.15s;
+    }
+    button:hover { opacity: 0.92; }
+    .btn-primary {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0369a1;
+      font-weight: 700;
+    }
+    .btn-order {
+      background: #10b981;
+      color: #ffffff;
+      border-color: #059669;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 11px 22px;
+    }
+    .btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+
+    /* Top 2 Main Tabs */
+    .main-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--card, #1e293b);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border, #334155);
+    }
+    .tab-btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      background: transparent;
+      color: var(--muted-foreground, #94a3b8);
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+    }
+
+    /* Segmented Toggle inside Tab 2 (인벤토리 <-> 사야 할 것 + 합계) */
+    .mode-toggle-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border, #334155);
+    }
+    .seg-toggle {
+      display: inline-flex;
+      background: var(--background, #0f172a);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border, #334155);
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted-foreground, #94a3b8);
+      padding: 8px 16px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .seg-btn.active {
+      background: var(--card, #1e293b);
+      color: var(--foreground, #f8fafc);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      border: 1px solid #38bdf8;
+    }
+
+    .toast {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      display: none;
+    }
+    .upload-box {
+      border: 2px dashed #475569;
+      border-radius: 14px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 16px;
+    }
+    .upload-box:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border, #334155);
+      background: var(--background, #0f172a);
+      color: var(--foreground, #f8fafc);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    input[type="text"] { flex: 1; min-width: 0; }
+    input[type="number"] { width: 92px; }
+
+    .item-list { display: flex; flex-direction: column; gap: 10px; }
+    .item-card {
+      background: var(--background, #0f172a);
+      border: 1px solid var(--border, #334155);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+    .item-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #1e293b;
+    }
+    .item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+    .item-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-days {
+      font-size: 12px;
+      color: var(--muted-foreground, #94a3b8);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pill-short {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .pill-buy {
+      background: rgba(244, 63, 94, 0.16);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+    .pill-skip {
+      background: rgba(16, 185, 129, 0.16);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .summary-footer {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border, #334155);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .total-price { font-size: 26px; font-weight: 800; color: #38bdf8; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 상단 타이틀 + 장보는 날 선택 -->
+    <div class="card header-row">
+      <h1>🥦 Nuvori 장보기</h1>
+      <div class="btn-group" id="day-buttons"></div>
+    </div>
+
+    <!-- 2개 메인 탭: | 🥬 인벤토리 ⇄ 🛒 쇼핑 리스트 | 📸 사진 올리기 | -->
+    <div class="main-tabs">
+      <button id="tab-main-btn" type="button" class="tab-btn active">🥬 인벤토리 ⇄ 🛒 쇼핑 리스트</button>
+      <button id="tab-upload-btn" type="button" class="tab-btn">📸 사진 올리기</button>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- TAB 1: 사진 올리기 -->
+    <div id="view-upload" class="card hidden">
+      <label class="upload-box">
+        <span style="font-size: 34px;">📷</span>
+        <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
+        <span id="upload-status-sub" class="sub">사진을 올리면 인벤토리로 자동 이동합니다</span>
+        <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
+      </label>
+
+      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 1클릭 테스트:</div>
+      <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
+
+      <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 영수증 DB 적재 기록 (언제 · 어디서 · 품목 · 금액)</div>
+        <div id="receipt-db-log" class="item-list"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 인벤토리 및 쇼핑 리스트 -->
+    <div id="view-main" class="card">
+      <div class="mode-toggle-wrap">
+        <div class="seg-toggle">
+          <button id="toggle-inventory" type="button" class="seg-btn active">🥬 인벤토리</button>
+          <button id="toggle-buy" type="button" class="seg-btn">🛒 쇼핑 리스트</button>
+        </div>
+        <span id="mode-summary-badge" class="pill pill-skip"></span>
+      </div>
+
+      <!-- 서브뷰 A: 인벤토리 리스트 -->
+      <div id="subview-inventory" class="item-list"></div>
+
+      <!-- 서브뷰 B: 쇼핑 리스트 + 합계 + 주문 -->
+      <div id="subview-buy" class="hidden">
+        <div class="input-row">
+          <input id="input-buy-name" type="text" placeholder="쇼핑 리스트에 새 아이템 직접 입력 (예: 삼겹살, 대파, 커피)" />
+          <input id="input-buy-price" type="number" step="0.01" min="0" placeholder="$4.50" />
+          <button id="btn-add-buy-item" type="button" class="btn-primary">+ 추가</button>
+        </div>
+
+        <div id="buy-list" class="item-list"></div>
+
+        <div class="summary-footer">
+          <div>
+            <div class="sub">쇼핑 리스트 합계</div>
+            <div id="checkout-total" class="total-price">$0.00</div>
+          </div>
+          <div class="btn-group">
+            <button id="btn-copy-list" type="button">📋 리스트 복사</button>
+            <button id="btn-order-now" type="button" class="btn-order">🚀 주문하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      function makeFoodImage(bg1, bg2, emoji) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88">' +
+          '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0%" stop-color="' + bg1 + '"/>' +
+          '<stop offset="100%" stop-color="' + bg2 + '"/>' +
+          '</linearGradient></defs>' +
+          '<rect width="88" height="88" rx="20" fill="url(#g)"/>' +
+          '<text x="44" y="58" font-size="42" text-anchor="middle">' + emoji + '</text>' +
+          '</svg>';
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+      }
+
+      var ITEM_IMAGES = {
+        eggs: makeFoodImage("#fef3c7", "#f59e0b", "🥚"),
+        spinach: makeFoodImage("#d1fae5", "#059669", "🥬"),
+        milk: makeFoodImage("#e0f2fe", "#0284c7", "🥛"),
+        soy_sauce: makeFoodImage("#fde68a", "#78350f", "🍾"),
+        tofu: makeFoodImage("#f1f5f9", "#64748b", "🧈"),
+        ramen: makeFoodImage("#fee2e2", "#dc2626", "🍜"),
+        pasta: makeFoodImage("#fef9c3", "#ca8a04", "🍝"),
+        olive_oil: makeFoodImage("#ecfccb", "#65a30d", "🫒"),
+        salmon: makeFoodImage("#ffedd5", "#ea580c", "🍣"),
+        avocado: makeFoodImage("#dcfce7", "#15803d", "🥑"),
+        pork_belly: makeFoodImage("#ffe4e6", "#e11d48", "🥩"),
+        green_onion: makeFoodImage("#d1fae5", "#10b981", "🧅"),
+        apple: makeFoodImage("#fee2e2", "#e11d48", "🍎"),
+        banana: makeFoodImage("#fef9c3", "#eab308", "🍌"),
+        bread: makeFoodImage("#fef3c7", "#d97706", "🍞"),
+        cheese: makeFoodImage("#fef08a", "#ca8a04", "🧀"),
+        coffee: makeFoodImage("#f5f5f4", "#78350f", "☕"),
+        garlic: makeFoodImage("#f1f5f9", "#94a3b8", "🧄"),
+        potato: makeFoodImage("#fef3c7", "#a16207", "🥔"),
+        water: makeFoodImage("#e0f2fe", "#0284c7", "💧"),
+        default_item: makeFoodImage("#e2e8f0", "#475569", "🛍️")
+      };
+
+      function inferThumbKey(name) {
+        var s = String(name || "").toLowerCase();
+        if (s.indexOf("계란") !== -1 || s.indexOf("달걀") !== -1 || s.indexOf("egg") !== -1) return "eggs";
+        if (s.indexOf("시금치") !== -1 || s.indexOf("배추") !== -1 || s.indexOf("김치") !== -1 || s.indexOf("상추") !== -1 || s.indexOf("양배추") !== -1) return "spinach";
+        if (s.indexOf("우유") !== -1 || s.indexOf("milk") !== -1) return "milk";
+        if (s.indexOf("간장") !== -1 || s.indexOf("소스") !== -1 || s.indexOf("식초") !== -1) return "soy_sauce";
+        if (s.indexOf("두부") !== -1 || s.indexOf("버터") !== -1) return "tofu";
+        if (s.indexOf("라면") !== -1 || s.indexOf("국수") !== -1 || s.indexOf("우동") !== -1) return "ramen";
+        if (s.indexOf("파스타") !== -1 || s.indexOf("스파게티") !== -1) return "pasta";
+        if (s.indexOf("올리브") !== -1 || s.indexOf("식용유") !== -1 || s.indexOf("참기름") !== -1) return "olive_oil";
+        if (s.indexOf("연어") !== -1 || s.indexOf("생선") !== -1 || s.indexOf("회") !== -1 || s.indexOf("고등어") !== -1) return "salmon";
+        if (s.indexOf("아보카도") !== -1) return "avocado";
+        if (s.indexOf("삼겹살") !== -1 || s.indexOf("소고기") !== -1 || s.indexOf("돼지") !== -1 || s.indexOf("닭") !== -1 || s.indexOf("고기") !== -1) return "pork_belly";
+        if (s.indexOf("대파") !== -1 || s.indexOf("양파") !== -1 || s.indexOf("파") !== -1) return "green_onion";
+        if (s.indexOf("사과") !== -1 || s.indexOf("토마토") !== -1 || s.indexOf("딸기") !== -1) return "apple";
+        if (s.indexOf("바나나") !== -1 || s.indexOf("레몬") !== -1) return "banana";
+        if (s.indexOf("빵") !== -1 || s.indexOf("베이글") !== -1 || s.indexOf("식빵") !== -1) return "bread";
+        if (s.indexOf("치즈") !== -1) return "cheese";
+        if (s.indexOf("커피") !== -1 || s.indexOf("원두") !== -1 || s.indexOf("차") !== -1) return "coffee";
+        if (s.indexOf("마늘") !== -1) return "garlic";
+        if (s.indexOf("감자") !== -1 || s.indexOf("고구마") !== -1) return "potato";
+        if (s.indexOf("물") !== -1 || s.indexOf("생수") !== -1 || s.indexOf("탄산수") !== -1) return "water";
+        return "default_item";
+      }
+
+      function getTodayIso() {
+        var d = new Date();
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()).padStart(2, "0");
+        return yyyy + "-" + mm + "-" + dd;
+      }
+
+      function daysBetweenIso(purchaseDateIso, todayIso) {
+        var t1 = Date.parse(purchaseDateIso);
+        var t2 = Date.parse(todayIso || getTodayIso());
+        if (isNaN(t1) || isNaN(t2)) return 0;
+        return Math.max(0, Math.round((t2 - t1) / (1000 * 60 * 60 * 24)));
+      }
+
+      function getDefaultItems() {
+        return [
+          { id: "eggs", name: "유기농 계란 (12구)", price: 4.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-02", cycleDays: 10, boughtDay: -9, checkedForOrder: true },
+          { id: "spinach", name: "베이비 시금치", price: 3.99, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-06", cycleDays: 5, boughtDay: -5, checkedForOrder: true },
+          { id: "milk", name: "우유 (1.89L)", price: 4.20, lastStore: "Costco", lastPurchaseDate: "2026-11-04", cycleDays: 8, boughtDay: -7, checkedForOrder: true },
+          { id: "soy_sauce", name: "양조간장", price: 6.50, lastStore: "H-Mart", lastPurchaseDate: "2026-09-17", cycleDays: 60, boughtDay: -55, checkedForOrder: true },
+          { id: "tofu", name: "찌개용 두부", price: 2.80, lastStore: "H-Mart", lastPurchaseDate: "2026-11-10", cycleDays: 8, boughtDay: -1, checkedForOrder: true },
+          { id: "ramen", name: "신라면 (5봉지)", price: 5.99, lastStore: "H-Mart", lastPurchaseDate: "2026-11-08", cycleDays: 21, boughtDay: -3, checkedForOrder: true },
+          { id: "pasta", name: "스파게티 파스타면", price: 2.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-05", cycleDays: 24, boughtDay: -6, checkedForOrder: true },
+          { id: "olive_oil", name: "엑스트라버진 올리브유", price: 11.99, lastStore: "Costco", lastPurchaseDate: "2026-11-01", cycleDays: 60, boughtDay: -10, checkedForOrder: true }
+        ];
+      }
+
+      function getDefaultReceipts() {
+        return [
+          {
+            id: "rcpt_init_1",
+            storeName: "H-Mart",
+            purchaseDate: "2026-11-10",
+            items: [
+              { name: "찌개용 두부", price: 2.80 },
+              { name: "신라면 (5봉지)", price: 5.99 }
+            ]
+          },
+          {
+            id: "rcpt_init_2",
+            storeName: "Trader Joe's",
+            purchaseDate: "2026-11-06",
+            items: [
+              { name: "베이비 시금치", price: 3.99 },
+              { name: "스파게티 파스타면", price: 2.50 }
+            ]
+          }
+        ];
+      }
+
+      var SAMPLE_RECEIPTS = [
+        {
+          label: "+ 트레이더조 영수증 (오늘 · 연어·아보카도·우유)",
+          storeName: "Trader Joe's",
+          daysAgo: 0,
+          items: [
+            { id: "salmon", name: "생연어 필렛", price: 12.99, cycleDays: 4 },
+            { id: "avocado", name: "아보카도 (3개입)", price: 4.50, cycleDays: 5 },
+            { id: "milk", name: "우유 (1.89L)", price: 4.20, cycleDays: 8 }
+          ]
+        },
+        {
+          label: "+ H-Mart 영수증 (2일 전 · 삼겹살·대파·계란)",
+          storeName: "H-Mart",
+          daysAgo: 2,
+          items: [
+            { id: "pork_belly", name: "삼겹살 구이용", price: 14.50, cycleDays: 5 },
+            { id: "green_onion", name: "대파 (1단)", price: 2.20, cycleDays: 7 },
+            { id: "eggs", name: "유기농 계란 (12구)", price: 4.50, cycleDays: 10 }
+          ]
+        }
+      ];
+
+      var STORAGE_KEY = "nuvori_poc_state_v2";
+
+      function loadInitialState() {
+        try {
+          var raw = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+              return {
+                activeTab: "main",
+                subMode: parsed.subMode || "inventory",
+                dayOffset: typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0,
+                items: parsed.items,
+                receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts()
+              };
+            }
+          }
+        } catch (e) {}
+        return {
+          activeTab: "main",       // "upload" | "main"
+          subMode: "inventory",    // "inventory" | "buy"
+          dayOffset: 0,
+          items: getDefaultItems(),
+          receipts: getDefaultReceipts()
+        };
+      }
+
+      function saveState() {
+        try {
+          if (window.localStorage) {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+              subMode: state.subMode,
+              dayOffset: state.dayOffset,
+              items: state.items,
+              receipts: state.receipts
+            }));
+          }
+        } catch (e) {}
+      }
+
+      var state = loadInitialState();
+
+      function getThumb(item) {
+        if (ITEM_IMAGES[item.id]) return ITEM_IMAGES[item.id];
+        if (item.thumbKey && ITEM_IMAGES[item.thumbKey]) return ITEM_IMAGES[item.thumbKey];
+        return ITEM_IMAGES[inferThumbKey(item.name)] || ITEM_IMAGES.default_item;
+      }
+
+      function formatDaysAgo(item, elapsed) {
+        if (item.isManuallyAdded) return "직접 추가됨";
+        if (elapsed <= 0) return "오늘 구매";
+        return "산 지 " + elapsed + "일 됨";
+      }
+
+      function evaluateItem(item) {
+        var elapsed = Math.max(0, state.dayOffset - item.boughtDay);
+        var ratio = elapsed / Math.max(1, item.cycleDays);
+        var freshnessPct = Math.max(0, Math.min(100, Math.round((1.0 - ratio) * 100)));
+        var isShort = Boolean(item.manualNeedToBuy) || (freshnessPct <= 25);
+        return {
+          elapsed: elapsed,
+          isShort: isShort
+        };
+      }
+
+      function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        return node;
+      }
+
+      function createThumbImg(item) {
+        var img = document.createElement("img");
+        img.className = "item-thumb";
+        img.src = getThumb(item);
+        img.alt = item.name;
+        return img;
+      }
+
+      function showToast(msg) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.style.display = "block";
+        setTimeout(function() {
+          t.style.display = "none";
+        }, 3500);
+      }
+
+      function ingestReceiptToDB(receiptObj, sourceLabel) {
+        var storeName = receiptObj.storeName || "마트";
+        var todayIso = getTodayIso();
+        var purchaseDate = receiptObj.purchaseDate || todayIso;
+        var daysAgo = typeof receiptObj.daysAgo === "number"
+          ? receiptObj.daysAgo
+          : daysBetweenIso(purchaseDate, todayIso);
+        var computedBoughtDay = state.dayOffset - daysAgo;
+        var newItems = Array.isArray(receiptObj.items) ? receiptObj.items : [];
+
+        for (var i = 0; i < newItems.length; i++) {
+          var n = newItems[i];
+          var found = null;
+          for (var j = 0; j < state.items.length; j++) {
+            if (state.items[j].id === n.id || state.items[j].name === n.name) {
+              found = state.items[j];
+              break;
+            }
+          }
+          if (found) {
+            var interval = Math.abs(computedBoughtDay - found.boughtDay);
+            if (interval >= 2 && interval <= 90) {
+              found.cycleDays = Math.max(2, Math.round(0.7 * found.cycleDays + 0.3 * interval));
+            }
+            found.boughtDay = computedBoughtDay;
+            if (n.price && n.price > 0) found.price = n.price;
+            found.lastStore = storeName;
+            found.lastPurchaseDate = purchaseDate;
+            found.manualNeedToBuy = false;
+            found.isManuallyAdded = false;
+            found.checkedForOrder = true;
+          } else {
+            state.items.unshift({
+              id: n.id || ("custom_" + Date.now() + "_" + i),
+              thumbKey: inferThumbKey(n.name),
+              name: n.name,
+              price: n.price || 4.50,
+              lastStore: storeName,
+              lastPurchaseDate: purchaseDate,
+              cycleDays: n.cycleDays || 10,
+              boughtDay: computedBoughtDay,
+              manualNeedToBuy: false,
+              isManuallyAdded: false,
+              checkedForOrder: true
+            });
+          }
+        }
+
+        if (!Array.isArray(state.receipts)) state.receipts = [];
+        state.receipts.unshift({
+          id: "rcpt_" + Date.now(),
+          storeName: storeName,
+          purchaseDate: purchaseDate,
+          items: newItems.map(function(it) {
+            return { name: it.name, price: it.price || 4.50 };
+          })
+        });
+
+        state.activeTab = "main";
+        state.subMode = "inventory";
+        showToast("✓ [" + storeName + " · " + purchaseDate + "] " + newItems.length + "개 품목 DB 적재 완료!");
+        renderAll();
+      }
+
+      function addNewItemToBuyList() {
+        var nameInput = document.getElementById("input-buy-name");
+        var priceInput = document.getElementById("input-buy-price");
+        var name = nameInput.value.trim();
+        if (!name) return;
+
+        var parsedPrice = parseFloat(priceInput.value);
+        var price = (!isNaN(parsedPrice) && parsedPrice > 0) ? parsedPrice : 4.50;
+
+        var found = null;
+        for (var i = 0; i < state.items.length; i++) {
+          if (state.items[i].name === name) {
+            found = state.items[i];
+            break;
+          }
+        }
+
+        if (found) {
+          found.manualNeedToBuy = true;
+          found.isManuallyAdded = true;
+          found.checkedForOrder = true;
+          if (!isNaN(parsedPrice) && parsedPrice > 0) {
+            found.price = parsedPrice;
+          }
+        } else {
+          state.items.unshift({
+            id: "buy_" + Date.now(),
+            thumbKey: inferThumbKey(name),
+            name: name,
+            price: price,
+            cycleDays: 10,
+            boughtDay: state.dayOffset - 10,
+            manualNeedToBuy: true,
+            isManuallyAdded: true,
+            checkedForOrder: true
+          });
+        }
+
+        nameInput.value = "";
+        priceInput.value = "";
+        state.activeTab = "main";
+        state.subMode = "buy";
+        showToast("🛒 '" + name + "' ($" + price.toFixed(2) + ") 쇼핑 리스트에 추가됨!");
+        renderAll();
+      }
+
+      function renderDayButtons() {
+        var wrap = document.getElementById("day-buttons");
+        wrap.replaceChildren();
+        wrap.appendChild(el("span", "sub", "시점:"));
+
+        var presets = [
+          { d: 0, label: "오늘" },
+          { d: 3, label: "+3일" },
+          { d: 7, label: "+7일" },
+          { d: 14, label: "+14일" }
+        ];
+        for (var i = 0; i < presets.length; i++) {
+          (function(p) {
+            var active = state.dayOffset === p.d;
+            var btn = el("button", active ? "btn-primary btn-sm" : "btn-sm", p.label);
+            btn.type = "button";
+            btn.addEventListener("click", function() {
+              state.dayOffset = p.d;
+              renderAll();
+            });
+            wrap.appendChild(btn);
+          })(presets[i]);
+        }
+      }
+
+      function renderSampleButtons() {
+        var wrap = document.getElementById("sample-receipt-btns");
+        wrap.replaceChildren();
+        for (var i = 0; i < SAMPLE_RECEIPTS.length; i++) {
+          (function(sr) {
+            var btn = el("button", "btn-sm", sr.label);
+            btn.type = "button";
+            btn.addEventListener("click", function() {
+              var d = new Date();
+              d.setDate(d.getDate() - (sr.daysAgo || 0));
+              var yyyy = d.getFullYear();
+              var mm = String(d.getMonth() + 1).padStart(2, "0");
+              var dd = String(d.getDate()).padStart(2, "0");
+              ingestReceiptToDB({
+                storeName: sr.storeName,
+                purchaseDate: yyyy + "-" + mm + "-" + dd,
+                daysAgo: sr.daysAgo || 0,
+                items: sr.items
+              });
+            });
+            wrap.appendChild(btn);
+          })(SAMPLE_RECEIPTS[i]);
+        }
+      }
+
+      function renderReceiptDbLog() {
+        var logWrap = document.getElementById("receipt-db-log");
+        if (!logWrap) return;
+        logWrap.replaceChildren();
+        var list = Array.isArray(state.receipts) ? state.receipts : [];
+        for (var i = 0; i < Math.min(5, list.length); i++) {
+          var r = list[i];
+          var card = el("div", "item-card");
+          var info = el("div", "item-info");
+          var itemSummary = (r.items || []).map(function(it) {
+            return it.name + "($" + Number(it.price || 0).toFixed(2) + ")";
+          }).join(", ");
+          var sum = (r.items || []).reduce(function(acc, it) {
+            return acc + Number(it.price || 0);
+          }, 0);
+          info.appendChild(el("div", "item-name", "🏪 " + r.storeName + "  ·  📅 " + r.purchaseDate));
+          info.appendChild(el("div", "item-days", itemSummary));
+          card.appendChild(info);
+          card.appendChild(el("span", "pill pill-skip", "$" + sum.toFixed(2)));
+          logWrap.appendChild(card);
+        }
+      }
+
+      function renderMainView() {
+        var invContainer = document.getElementById("subview-inventory");
+        var buyList = document.getElementById("buy-list");
+        invContainer.replaceChildren();
+        buyList.replaceChildren();
+
+        var shortCount = 0;
+        var skipCount = 0;
+        var savedMoney = 0.0;
+        var buyEntries = [];
+
+        for (var i = 0; i < state.items.length; i++) {
+          var item = state.items[i];
+          var ev = evaluateItem(item);
+
+          if (ev.isShort) {
+            shortCount++;
+            buyEntries.push({ item: item, ev: ev });
+          } else {
+            skipCount++;
+            savedMoney += item.price;
+          }
+
+          // Render row in Inventory Subview
+          var card = el("div", "item-card");
+          var left = el("div", "item-left");
+          left.appendChild(createThumbImg(item));
+          var info = el("div", "item-info");
+          info.appendChild(el("div", "item-name", item.name));
+          info.appendChild(el("div", "item-days", formatDaysAgo(item, ev.elapsed)));
+          left.appendChild(info);
+          card.appendChild(left);
+
+          if (ev.isShort) {
+            card.appendChild(el("span", "pill pill-short", "⚠️ 부족하다"));
+          } else {
+            card.appendChild(el("span", "pill pill-skip", "✅ 안 사도 된다"));
+          }
+          invContainer.appendChild(card);
+        }
+
+        // Update toggle buttons & summary badge
+        var btnInv = document.getElementById("toggle-inventory");
+        var btnBuy = document.getElementById("toggle-buy");
+        btnInv.textContent = "🥬 인벤토리 (" + state.items.length + ")";
+        btnBuy.textContent = "🛒 쇼핑 리스트 (" + shortCount + ")";
+
+        var badge = document.getElementById("mode-summary-badge");
+        if (state.subMode === "inventory") {
+          btnInv.className = "seg-btn active";
+          btnBuy.className = "seg-btn";
+          document.getElementById("subview-inventory").classList.remove("hidden");
+          document.getElementById("subview-buy").classList.add("hidden");
+          badge.className = "pill pill-short";
+          badge.textContent = "⚠️ 부족 " + shortCount + "개 · ✅ 충분 " + skipCount + "개";
+        } else {
+          btnInv.className = "seg-btn";
+          btnBuy.className = "seg-btn active";
+          document.getElementById("subview-inventory").classList.add("hidden");
+          document.getElementById("subview-buy").classList.remove("hidden");
+          badge.className = "pill pill-skip";
+          badge.textContent = "✅ 안 사도 되는 " + skipCount + "개로 $" + savedMoney.toFixed(2) + " 절약";
+        }
+
+        // Render rows in Buy Subview
+        var orderTotal = 0.0;
+        if (buyEntries.length === 0) {
+          var empty = el("div", "sub", "쇼핑 리스트에 품목이 없습니다. 위 입력창에서 직접 추가하거나 [+7일]을 눌러보세요.");
+          empty.style.padding = "20px";
+          empty.style.textAlign = "center";
+          buyList.appendChild(empty);
+        } else {
+          for (var b = 0; b < buyEntries.length; b++) {
+            (function(entry) {
+              var row = el("label", "item-card");
+              row.style.cursor = "pointer";
+              var left = el("div", "item-left");
+
+              var cb = document.createElement("input");
+              cb.type = "checkbox";
+              cb.checked = entry.item.checkedForOrder !== false;
+              cb.addEventListener("change", function() {
+                entry.item.checkedForOrder = cb.checked;
+                renderMainView();
+              });
+              left.appendChild(cb);
+              left.appendChild(createThumbImg(entry.item));
+
+              var info = el("div", "item-info");
+              info.appendChild(el("div", "item-name", entry.item.name));
+              info.appendChild(el("div", "item-days", formatDaysAgo(entry.item, entry.ev.elapsed)));
+              left.appendChild(info);
+              row.appendChild(left);
+
+              var right = el("div", "btn-group");
+              right.appendChild(el("span", "pill pill-buy", "🛒 사야 한다"));
+              right.appendChild(el("span", "item-name", "$" + entry.item.price.toFixed(2)));
+              row.appendChild(right);
+
+              buyList.appendChild(row);
+
+              if (entry.item.checkedForOrder !== false) {
+                orderTotal += entry.item.price;
+              }
+            })(buyEntries[b]);
+          }
+        }
+
+        document.getElementById("checkout-total").textContent = "$" + orderTotal.toFixed(2);
+        saveState();
+      }
+
+      function renderAll() {
+        var tabUploadBtn = document.getElementById("tab-upload-btn");
+        var tabMainBtn = document.getElementById("tab-main-btn");
+        var viewUpload = document.getElementById("view-upload");
+        var viewMain = document.getElementById("view-main");
+
+        if (state.activeTab === "upload") {
+          tabUploadBtn.className = "tab-btn active";
+          tabMainBtn.className = "tab-btn";
+          viewUpload.classList.remove("hidden");
+          viewMain.classList.add("hidden");
+        } else {
+          tabUploadBtn.className = "tab-btn";
+          tabMainBtn.className = "tab-btn active";
+          viewUpload.classList.add("hidden");
+          viewMain.classList.remove("hidden");
+        }
+
+        renderDayButtons();
+        renderSampleButtons();
+        renderReceiptDbLog();
+        renderMainView();
+      }
+
+      // Wire Tabs & Toggle
+      document.getElementById("tab-upload-btn").addEventListener("click", function() {
+        state.activeTab = "upload";
+        renderAll();
+      });
+
+      document.getElementById("tab-main-btn").addEventListener("click", function() {
+        state.activeTab = "main";
+        renderAll();
+      });
+
+      document.getElementById("toggle-inventory").addEventListener("click", function() {
+        state.subMode = "inventory";
+        renderMainView();
+      });
+
+      document.getElementById("toggle-buy").addEventListener("click", function() {
+        state.subMode = "buy";
+        renderMainView();
+      });
+
+      function compressImageToBase64(file, callback) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var maxDim = 1024;
+            var w = img.width;
+            var h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round(h * (maxDim / w));
+                w = maxDim;
+              } else {
+                w = Math.round(w * (maxDim / h));
+                h = maxDim;
+              }
+            }
+            var canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            var dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            var base64Data = dataUrl.split(",")[1];
+            callback(null, base64Data);
+          };
+          img.onerror = function() { callback(new Error("이미지 로드 실패")); };
+          img.src = e.target.result;
+        };
+        reader.onerror = function() { callback(new Error("파일 읽기 실패")); };
+        reader.readAsDataURL(file);
+      }
+
+      document.getElementById("file-upload").addEventListener("change", function(ev) {
+        var file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+
+        var statusTitle = document.getElementById("upload-status-title");
+        var statusSub = document.getElementById("upload-status-sub");
+        statusTitle.textContent = "⏳ 영수증 AI 분석 중...";
+        statusSub.textContent = "상점명 · 구매일자 · 품목 · 금액 추출 중";
+
+        compressImageToBase64(file, function(err, base64Jpeg) {
+          if (err || !base64Jpeg) {
+            statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
+            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
+            ingestReceiptToDB({
+              storeName: SAMPLE_RECEIPTS[0].storeName,
+              purchaseDate: getTodayIso(),
+              daysAgo: 0,
+              items: SAMPLE_RECEIPTS[0].items
+            });
+            return;
+          }
+
+          var existingNames = state.items.map(function(it) { return it.name; });
+          fetch("/.netlify/functions/parse-receipt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageBase64: base64Jpeg,
+              existingNames: existingNames,
+              todayIso: getTodayIso()
+            })
+          })
+          .then(function(res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function(parsed) {
+            statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
+            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
+            if (!parsed || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+              ingestReceiptToDB({
+                storeName: SAMPLE_RECEIPTS[0].storeName,
+                purchaseDate: getTodayIso(),
+                daysAgo: 0,
+                items: SAMPLE_RECEIPTS[0].items
+              });
+              return;
+            }
+            ingestReceiptToDB({
+              storeName: parsed.storeName || "마트",
+              purchaseDate: parsed.purchaseDate || getTodayIso(),
+              items: parsed.items
+            });
+          })
+          .catch(function() {
+            statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
+            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
+            ingestReceiptToDB({
+              storeName: SAMPLE_RECEIPTS[0].storeName,
+              purchaseDate: getTodayIso(),
+              daysAgo: 0,
+              items: SAMPLE_RECEIPTS[0].items
+            });
+          });
+        });
+
+        ev.target.value = "";
+      });
+
+      document.getElementById("btn-add-buy-item").addEventListener("click", addNewItemToBuyList);
+      document.getElementById("input-buy-name").addEventListener("keydown", function(ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          addNewItemToBuyList();
+        }
+      });
+      document.getElementById("input-buy-price").addEventListener("keydown", function(ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          addNewItemToBuyList();
+        }
+      });
+
+      document.getElementById("btn-order-now").addEventListener("click", function() {
+        var orderedCount = 0;
+        var totalPaid = 0.0;
+        for (var i = 0; i < state.items.length; i++) {
+          var it = state.items[i];
+          var ev = evaluateItem(it);
+          if (ev.isShort && it.checkedForOrder !== false) {
+            it.boughtDay = state.dayOffset;
+            it.manualNeedToBuy = false;
+            it.isManuallyAdded = false;
+            orderedCount++;
+            totalPaid += it.price;
+          }
+        }
+        if (orderedCount === 0) {
+          showToast("주문할 품목이 없습니다.");
+          return;
+        }
+        state.subMode = "inventory";
+        showToast("🎉 주문 완료! " + orderedCount + "개 품목($" + totalPaid.toFixed(2) + ")이 '오늘 구매'로 채워졌습니다.");
+        renderAll();
+      });
+
+      document.getElementById("btn-copy-list").addEventListener("click", function() {
+        var lines = ["[Nuvori 구매 리스트]"];
+        var total = 0.0;
+        for (var i = 0; i < state.items.length; i++) {
+          var it = state.items[i];
+          var ev = evaluateItem(it);
+          if (ev.isShort && it.checkedForOrder !== false) {
+            lines.push("- " + it.name + " ($" + it.price.toFixed(2) + ")");
+            total += it.price;
+          }
+        }
+        lines.push("합계: $" + total.toFixed(2));
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(lines.join("\n"));
+        }
+        showToast("📋 구매 리스트가 복사되었습니다!");
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
