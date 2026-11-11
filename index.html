@@ -518,13 +518,52 @@
         return "산 지 " + elapsed + "일 됨";
       }
 
+      // ====================================================================
+      // 3-State Hierarchical HSMM + Asymmetric Bayesian Decision Engine
+      // States: S2 (잉여/Surplus) -> S1 (정상 소비/Normal) -> S0 (부족/Depleted)
+      // Observable: O_t in {0, 1} (영수증 구매 관측 시점 boughtDay 및 재구매 간격)
+      // ====================================================================
+      function computeHsmmBelief(elapsedDays, cycleDays) {
+        var bS2 = 1.0; // 구매 직후(d=0) 잉여(S2) 확률 100%
+        var bS1 = 0.0; // 정상 소비(S1)
+        var bS0 = 0.0; // 부족/고갈(S0)
+
+        var halfCycle = Math.max(1.0, cycleDays * 0.45);
+        var remCycle = Math.max(1.0, cycleDays * 0.55);
+
+        for (var d = 1; d <= elapsedDays; d++) {
+          // Semi-Markov Weibull-like increasing hazard rate h(d) with dwell time
+          var h21 = Math.min(0.85, Math.max(0.05, (1.0 / halfCycle) * (1.0 + 0.35 * (d / halfCycle))));
+          var h10 = Math.min(0.90, Math.max(0.04, (1.0 / remCycle) * Math.pow(Math.max(0.2, d / cycleDays), 1.6)));
+
+          var nextS2 = bS2 * (1.0 - h21);
+          var nextS1 = bS1 * (1.0 - h10) + bS2 * h21;
+          var nextS0 = bS0 + bS1 * h10;
+
+          // 구매 미관측(O_d = 0) 조건부 베이즈 우도 보정 (Likelihood: P(O=0|S2,S1)=0.98, P(O=0|S0)=0.72)
+          var l2 = nextS2 * 0.98;
+          var l1 = nextS1 * 0.98;
+          var l0 = nextS0 * 0.72;
+          var norm = l2 + l1 + l0;
+          if (norm > 0) {
+            bS2 = l2 / norm;
+            bS1 = l1 / norm;
+            bS0 = l0 / norm;
+          }
+        }
+        return { pSurplus: bS2, pNormal: bS1, pDepleted: bS0 };
+      }
+
       function evaluateItem(item) {
         var elapsed = Math.max(0, state.dayOffset - item.boughtDay);
-        var ratio = elapsed / Math.max(1, item.cycleDays);
-        var freshnessPct = Math.max(0, Math.min(100, Math.round((1.0 - ratio) * 100)));
-        var isShort = Boolean(item.manualNeedToBuy) || (freshnessPct <= 25);
+        var belief = computeHsmmBelief(elapsed, Math.max(1, item.cycleDays));
+        // Asymmetric Newsvendor Critical Fractile + Duration Guard
+        var isShort = Boolean(item.manualNeedToBuy) ||
+          (belief.pDepleted >= 0.24) ||
+          (elapsed >= Math.round(item.cycleDays * 0.75));
         return {
           elapsed: elapsed,
+          belief: belief,
           isShort: isShort
         };
       }
