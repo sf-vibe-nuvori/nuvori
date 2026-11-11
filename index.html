@@ -563,7 +563,7 @@
       var CHAT_QUICK_PROMPTS = [
         "오늘 장본지 3일 됐는데, 뭐 사야돼?",
         "장본지 7일 지났는데 뭐 사야돼?",
-        "오늘 기준으로 당장 사야 할 것만 보여줘",
+        "이번 주 외식 많아서 집밥 2끼만 먹을 건데 뭐 사야돼?",
         "두부 다 먹었어, 쇼핑리스트에 추가해줘"
       ];
 
@@ -1096,9 +1096,19 @@
           }
         }
 
+        var lowConsumptionWeek = (
+          text.indexOf("외식") !== -1 ||
+          text.indexOf("배달") !== -1 ||
+          text.indexOf("집밥 1") !== -1 ||
+          text.indexOf("집밥 2") !== -1 ||
+          text.indexOf("조금만") !== -1 ||
+          text.indexOf("바빠") !== -1
+        );
+
         return {
           detectedDays: detectedDays,
-          depletedItemName: depletedItemName
+          depletedItemName: depletedItemName,
+          lowConsumptionWeek: lowConsumptionWeek
         };
       }
 
@@ -1108,6 +1118,7 @@
         var dayLabel = state.dayOffset === 0 ? "오늘(기준일)" : ("장본 지 +" + state.dayOffset + "일 경과");
         var buyEntries = [];
         var skipEntries = [];
+        var holdPerishables = [];
         var totalCost = 0.0;
         var savedCost = 0.0;
 
@@ -1115,8 +1126,14 @@
           var item = state.items[i];
           var ev = evaluateItem(item);
           if (ev.isShort) {
-            buyEntries.push({ item: item, ev: ev });
-            totalCost += item.price;
+            if (intentResult.lowConsumptionWeek && item.cycleDays <= 6 && !item.manualNeedToBuy) {
+              holdPerishables.push(item);
+              skipEntries.push({ item: item, ev: ev });
+              savedCost += item.price;
+            } else {
+              buyEntries.push({ item: item, ev: ev });
+              totalCost += item.price;
+            }
           } else {
             skipEntries.push({ item: item, ev: ev });
             savedCost += item.price;
@@ -1127,7 +1144,11 @@
         if (intentResult.depletedItemName) {
           headerMsg = "✅ '" + intentResult.depletedItemName + "' 품목을 쇼핑 리스트에 반영했습니다! ";
         }
-        if (intentResult.detectedDays !== null) {
+        if (intentResult.lowConsumptionWeek) {
+          headerMsg += "🍽️ [외식 다수 · 저소비 주간 모드] 이번 주 예상 소비량이 적으므로 단기 부패 신선식품(" +
+            (holdPerishables.map(function(p) { return p.name; }).join(", ") || "잎채소류") +
+            ")은 폐기 방지를 위해 제외하고 꼭 필요한 " + buyEntries.length + "개($" + totalCost.toFixed(2) + ")만 추렸습니다:";
+        } else if (intentResult.detectedDays !== null) {
           headerMsg += "⏱️ 시점을 [" + dayLabel + "]로 이동해 소진 예측(HSMM)을 계산한 결과, 사야 할 품목은 " + buyEntries.length + "개($" + totalCost.toFixed(2) + ")입니다:";
         } else {
           headerMsg += "📊 현재 [" + dayLabel + "] 기준 사야 할 쇼핑 리스트는 " + buyEntries.length + "개($" + totalCost.toFixed(2) + ")입니다:";
@@ -1168,7 +1189,7 @@
             el(
               "div",
               "chat-skip-note",
-              "✅ 집에 아직 충분해서 안 사도 되는 품목 (" + skipEntries.length + "개 · $" + savedCost.toFixed(2) + " 절약): " + skipNames
+              "✅ 집에 아직 충분하거나 구매 보류로 아낀 품목 (" + skipEntries.length + "개 · $" + savedCost.toFixed(2) + " 절약): " + skipNames
             )
           );
         }
@@ -1200,11 +1221,19 @@
 
         botBubble.appendChild(shopBox);
 
-        var aiNote = el(
-          "div",
-          "chat-ai-note",
-          "💡 소비 팁: 신선채소(시금치 등)는 구매 후 4~5일 내 부패 위험이 높으므로 이번 주 집밥 횟수가 적다면 구매를 미루고, 집에 남은 두부·파스타면을 먼저 소진하세요."
-        );
+        var fastSpoilInBuy = buyEntries.filter(function(e) { return e.item.cycleDays <= 6; }).map(function(e) { return e.item.name; });
+        var inStockFresh = skipEntries.filter(function(e) { return e.item.cycleDays <= 10; }).map(function(e) { return e.item.name; });
+        var dynamicTip = "💡 소비 기반 장보기 팁: ";
+        if (fastSpoilInBuy.length > 0) {
+          dynamicTip += "구매 리스트의 [" + fastSpoilInBuy.join(", ") + "]은(는) 4~5일 내 부패 위험이 높으니 이번 주 최소 2끼 이상 소비할 계획일 때만 담으세요.";
+        } else {
+          dynamicTip += "이번 리스트는 보관 주기가 비교적 긴 필수 스테이플 위주여서 부패로 버릴 위험이 낮습니다.";
+        }
+        if (inStockFresh.length > 0) {
+          dynamicTip += " 집에 남아 있는 [" + inStockFresh.join(", ") + "]을(를) 오늘·내일 저녁에 먼저 소진하는 것을 추천합니다.";
+        }
+
+        var aiNote = el("div", "chat-ai-note", dynamicTip);
         botBubble.appendChild(aiNote);
 
         // Optional async enrichment via Netlify Gemini endpoint
