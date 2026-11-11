@@ -592,6 +592,22 @@
         }, 3500);
       }
 
+      function isNonGroceryNoise(name) {
+        var s = String(name || "").toLowerCase().trim();
+        if (!s) return true;
+        var noiseKeywords = [
+          "tax", "subtotal", "sub-total", "total", "change", "cash", "credit", "visa", "mastercard",
+          "bag fee", "paper bag", "plastic bag", "crv", "bottle deposit", "deposit", "coupon", "discount",
+          "member savings", "tip", "gratuity", "봉투", "쇼핑백", "종량제", "부가세", "합계", "소계", "할인", "보증금"
+        ];
+        for (var i = 0; i < noiseKeywords.length; i++) {
+          if (s === noiseKeywords[i] || s.indexOf(noiseKeywords[i]) !== -1) {
+            return true;
+          }
+        }
+        return false;
+      }
+
       function ingestReceiptToDB(receiptObj, sourceLabel) {
         var storeName = receiptObj.storeName || "마트";
         var todayIso = getTodayIso();
@@ -600,7 +616,18 @@
           ? receiptObj.daysAgo
           : daysBetweenIso(purchaseDate, todayIso);
         var computedBoughtDay = state.dayOffset - daysAgo;
-        var newItems = Array.isArray(receiptObj.items) ? receiptObj.items : [];
+        var rawItems = Array.isArray(receiptObj.items) ? receiptObj.items : [];
+        var newItems = [];
+        for (var k = 0; k < rawItems.length; k++) {
+          var cand = rawItems[k];
+          if (cand && cand.name && !isNonGroceryNoise(cand.name) && Number(cand.price) > 0) {
+            newItems.push(cand);
+          }
+        }
+        if (newItems.length === 0) {
+          showToast("⚠️ 인식된 식료품 항목이 없어 인벤토리 DB에 추가하지 않았습니다.");
+          return;
+        }
 
         for (var i = 0; i < newItems.length; i++) {
           var n = newItems[i];
@@ -1004,13 +1031,11 @@
           .then(function(parsed) {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
             statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
-            if (!parsed || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-              ingestReceiptToDB({
-                storeName: SAMPLE_RECEIPTS[0].storeName,
-                purchaseDate: getTodayIso(),
-                daysAgo: 0,
-                items: SAMPLE_RECEIPTS[0].items
-              });
+            if (!parsed || parsed.isValidGroceryReceipt === false || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+              var reasonMsg = (parsed && parsed.reason)
+                ? parsed.reason
+                : "식료품 영수증이 아니거나 식재료 항목을 찾을 수 없습니다.";
+              showToast("⚠️ 등록 제외: " + reasonMsg);
               return;
             }
             ingestReceiptToDB({
@@ -1022,12 +1047,7 @@
           .catch(function() {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
             statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
-            ingestReceiptToDB({
-              storeName: SAMPLE_RECEIPTS[0].storeName,
-              purchaseDate: getTodayIso(),
-              daysAgo: 0,
-              items: SAMPLE_RECEIPTS[0].items
-            });
+            showToast("⚠️ 영수증 분석 서버 연결에 실패했습니다. (테스트용이면 아래 샘플 영수증 버튼을 눌러보세요)");
           });
         });
 
