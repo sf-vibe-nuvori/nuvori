@@ -696,6 +696,8 @@
       }
 
       var state = loadInitialState();
+      var runtimeGeminiKey = "";
+      var lastUploadedBase64 = "";
 
       function getThumb(item) {
         if (ITEM_IMAGES[item.id]) return ITEM_IMAGES[item.id];
@@ -822,6 +824,7 @@
           storeName: draftReceipt.storeName || "마트",
           purchaseDate: draftReceipt.purchaseDate || todayIso,
           note: draftReceipt.note || "",
+          needsApiKeyRetry: Boolean(draftReceipt.needsApiKeyRetry),
           items: cleaned
         };
         state.activeTab = "upload";
@@ -1031,6 +1034,37 @@
               "잘못 파싱된 품목명·금액·소비주기를 수정하거나 불필요한 행을 [✕]로 지운 뒤 아래 [✅ 인벤토리 DB에 등록]을 눌러주세요."
             )
           );
+        }
+
+        if (pending.needsApiKeyRetry && lastUploadedBase64) {
+          var keyRetryRow = el("div", "input-row");
+          keyRetryRow.style.marginBottom = "4px";
+          var keyIn = document.createElement("input");
+          keyIn.type = "password";
+          keyIn.style.flex = "1";
+          keyIn.style.padding = "8px 10px";
+          keyIn.style.borderRadius = "8px";
+          keyIn.style.border = "1px solid #38bdf8";
+          keyIn.style.background = "#0f172a";
+          keyIn.style.color = "#f8fafc";
+          keyIn.placeholder = "Google AI Studio 키(AIza...) 입력 시 즉시 재파싱 가능";
+          keyIn.value = runtimeGeminiKey;
+          keyIn.addEventListener("input", function() {
+            runtimeGeminiKey = keyIn.value.trim();
+          });
+          keyRetryRow.appendChild(keyIn);
+
+          var retryBtn = el("button", "btn-primary btn-sm", "🔄 사진 다시 파싱");
+          retryBtn.type = "button";
+          retryBtn.addEventListener("click", function() {
+            if (!runtimeGeminiKey) {
+              showToast("유효한 Gemini API 키(AIza...)를 입력해 주세요.");
+              return;
+            }
+            requestReceiptOcr(lastUploadedBase64);
+          });
+          keyRetryRow.appendChild(retryBtn);
+          box.appendChild(keyRetryRow);
         }
 
         // Store & Date Row
@@ -1839,13 +1873,80 @@
         reader.readAsDataURL(file);
       }
 
+      function requestReceiptOcr(base64Jpeg) {
+        var statusTitle = document.getElementById("upload-status-title");
+        var statusSub = document.getElementById("upload-status-sub");
+        statusTitle.textContent = "⏳ 영수증 AI 분석 중...";
+        statusSub.textContent = "인식 완료 후 바로 등록되지 않고 확인/수정 창이 열립니다";
+
+        var existingNames = state.items.map(function(it) { return it.name; });
+        fetch("/.netlify/functions/parse-receipt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageBase64: base64Jpeg,
+            mimeType: "image/jpeg",
+            existingNames: existingNames,
+            todayIso: getTodayIso(),
+            clientApiKey: runtimeGeminiKey || ""
+          })
+        })
+        .then(function(res) {
+          return res.json().then(function(body) {
+            if (!res.ok) {
+              throw new Error((body && (body.detail || body.error)) || ("HTTP " + res.status));
+            }
+            return body;
+          });
+        })
+        .then(function(parsed) {
+          statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
+          statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+          if (!parsed || parsed.isValidGroceryReceipt === false || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+            var reasonMsg = (parsed && parsed.reason)
+              ? parsed.reason
+              : "식료품 영수증이 아니거나 식재료 항목을 찾을 수 없습니다.";
+            showToast("⚠️ 자동 인식 제외: " + reasonMsg + " (필요 시 아래에서 직접 수정·추가 가능)");
+            openReceiptReviewEditor({
+              storeName: (parsed && parsed.storeName) || "마트",
+              purchaseDate: (parsed && parsed.purchaseDate) || getTodayIso(),
+              note: "⚠️ AI 판별 메모: " + reasonMsg + " — 직접 품목을 입력하거나 [✕ 닫기]를 눌러 취소하세요.",
+              items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
+            });
+            return;
+          }
+          showToast("🔍 영수증 " + parsed.items.length + "개 품목 인식 완료! 내용을 확인·수정한 뒤 등록을 눌러주세요.");
+          openReceiptReviewEditor({
+            storeName: parsed.storeName || "마트",
+            purchaseDate: parsed.purchaseDate || getTodayIso(),
+            items: parsed.items
+          });
+        })
+        .catch(function(errObj) {
+          statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
+          statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+          var errMsg = (errObj && errObj.message) ? errObj.message : "서버 연결 실패";
+          var isKeyInvalid = errMsg.indexOf("API key not valid") !== -1 || errMsg.indexOf("GEMINI_API_KEY") !== -1;
+          showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정하거나 키를 재입력할 수 있습니다.");
+          openReceiptReviewEditor({
+            storeName: "마트",
+            purchaseDate: getTodayIso(),
+            needsApiKeyRetry: isKeyInvalid,
+            note: isKeyInvalid
+              ? "⚠️ 현재 Netlify 환경변수(GEMINI_API_KEY)가 유효하지 않습니다('API key not valid'). 아래에 유효한 Google AI Studio 키(AIza...)를 넣어 [🔄 사진 다시 파싱]을 누르거나 직접 품목을 입력해 등록하세요."
+              : ("⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력하거나 샘플 영수증으로 테스트해 보세요."),
+            items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
+          });
+        });
+      }
+
       document.getElementById("file-upload").addEventListener("change", function(ev) {
         var file = ev.target.files && ev.target.files[0];
         if (!file) return;
 
         var statusTitle = document.getElementById("upload-status-title");
         var statusSub = document.getElementById("upload-status-sub");
-        statusTitle.textContent = "⏳ 영수증 AI 분석 중...";
+        statusTitle.textContent = "⏳ 영수증 사진 압축 중...";
         statusSub.textContent = "인식 완료 후 바로 등록되지 않고 확인/수정 창이 열립니다";
 
         compressImageToBase64(file, function(err, base64Jpeg) {
@@ -1861,60 +1962,8 @@
             return;
           }
 
-          var existingNames = state.items.map(function(it) { return it.name; });
-          fetch("/.netlify/functions/parse-receipt", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              imageBase64: base64Jpeg,
-              mimeType: "image/jpeg",
-              existingNames: existingNames,
-              todayIso: getTodayIso()
-            })
-          })
-          .then(function(res) {
-            return res.json().then(function(body) {
-              if (!res.ok) {
-                throw new Error((body && (body.detail || body.error)) || ("HTTP " + res.status));
-              }
-              return body;
-            });
-          })
-          .then(function(parsed) {
-            statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
-            if (!parsed || parsed.isValidGroceryReceipt === false || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-              var reasonMsg = (parsed && parsed.reason)
-                ? parsed.reason
-                : "식료품 영수증이 아니거나 식재료 항목을 찾을 수 없습니다.";
-              showToast("⚠️ 자동 인식 제외: " + reasonMsg + " (필요 시 아래에서 직접 수정·추가 가능)");
-              openReceiptReviewEditor({
-                storeName: (parsed && parsed.storeName) || "마트",
-                purchaseDate: (parsed && parsed.purchaseDate) || getTodayIso(),
-                note: "⚠️ AI 판별 메모: " + reasonMsg + " — 직접 품목을 입력하거나 [✕ 닫기]를 눌러 취소하세요.",
-                items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
-              });
-              return;
-            }
-            showToast("🔍 영수증 " + parsed.items.length + "개 품목 인식 완료! 내용을 확인·수정한 뒤 등록을 눌러주세요.");
-            openReceiptReviewEditor({
-              storeName: parsed.storeName || "마트",
-              purchaseDate: parsed.purchaseDate || getTodayIso(),
-              items: parsed.items
-            });
-          })
-          .catch(function(errObj) {
-            statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
-            var errMsg = (errObj && errObj.message) ? errObj.message : "서버 연결 실패";
-            showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정·입력할 수 있습니다.");
-            openReceiptReviewEditor({
-              storeName: "마트",
-              purchaseDate: getTodayIso(),
-              note: "⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력하거나 샘플 영수증으로 테스트해 보세요.",
-              items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
-            });
-          });
+          lastUploadedBase64 = base64Jpeg;
+          requestReceiptOcr(base64Jpeg);
         });
 
         ev.target.value = "";

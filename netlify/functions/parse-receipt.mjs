@@ -3,16 +3,26 @@ export default async (req) => {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: "Server missing GEMINI_API_KEY environment variable" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
   try {
-    const { imageBase64, mimeType = "image/jpeg", existingNames = [], todayIso = "" } = await req.json();
+    const {
+      imageBase64,
+      mimeType = "image/jpeg",
+      existingNames = [],
+      todayIso = "",
+      clientApiKey = ""
+    } = await req.json();
+
+    const envKey = (process.env.GEMINI_API_KEY || "").trim().replace(/^["']|["']$/g, "");
+    const userKey = (clientApiKey || "").trim().replace(/^["']|["']$/g, "");
+    const candidateKeys = [userKey, envKey].filter(Boolean);
+
+    if (candidateKeys.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Server missing GEMINI_API_KEY environment variable" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     if (!imageBase64) {
       return new Response(JSON.stringify({ error: "Missing imageBase64" }), {
         status: 400,
@@ -38,69 +48,75 @@ export default async (req) => {
     let lastStatus = 502;
     let lastErrorText = "";
 
-    for (const modelName of models) {
-      const geminiUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/" +
-        modelName +
-        ":generateContent?key=" +
-        encodeURIComponent(apiKey);
+    for (const activeKey of candidateKeys) {
+      for (const modelName of models) {
+        const geminiUrl =
+          "https://generativelanguage.googleapis.com/v1beta/models/" +
+          modelName +
+          ":generateContent?key=" +
+          encodeURIComponent(activeKey);
 
-      const geminiRes = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: promptText },
-                { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                isValidGroceryReceipt: { type: "BOOLEAN" },
-                reason: { type: "STRING" },
-                storeName: { type: "STRING" },
-                purchaseDate: { type: "STRING" },
-                items: {
-                  type: "ARRAY",
+        const geminiRes = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: promptText },
+                  { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "OBJECT",
+                properties: {
+                  isValidGroceryReceipt: { type: "BOOLEAN" },
+                  reason: { type: "STRING" },
+                  storeName: { type: "STRING" },
+                  purchaseDate: { type: "STRING" },
                   items: {
-                    type: "OBJECT",
-                    properties: {
-                      name: { type: "STRING" },
-                      price: { type: "NUMBER" },
-                      quantity: { type: "INTEGER" },
-                      cycleDays: { type: "INTEGER" }
-                    },
-                    required: ["name", "price", "cycleDays"]
+                    type: "ARRAY",
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        name: { type: "STRING" },
+                        price: { type: "NUMBER" },
+                        quantity: { type: "INTEGER" },
+                        cycleDays: { type: "INTEGER" }
+                      },
+                      required: ["name", "price", "cycleDays"]
+                    }
                   }
-                }
-              },
-              required: ["isValidGroceryReceipt", "reason", "storeName", "purchaseDate", "items"]
+                },
+                required: ["isValidGroceryReceipt", "reason", "storeName", "purchaseDate", "items"]
+              }
             }
-          }
-        })
-      });
-
-      if (geminiRes.ok) {
-        const data = await geminiRes.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        return new Response(rawText, {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
+          })
         });
-      } else {
-        lastStatus = geminiRes.status;
-        try {
-          const errJson = await geminiRes.json();
-          lastErrorText = errJson?.error?.message || ("HTTP " + geminiRes.status);
-        } catch (_) {
-          lastErrorText = "HTTP " + geminiRes.status;
+
+        if (geminiRes.ok) {
+          const data = await geminiRes.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+          return new Response(rawText, {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        } else {
+          lastStatus = geminiRes.status;
+          try {
+            const errJson = await geminiRes.json();
+            lastErrorText = errJson?.error?.message || ("HTTP " + geminiRes.status);
+          } catch (_) {
+            lastErrorText = "HTTP " + geminiRes.status;
+          }
+          // If the key itself is invalid (400 API key not valid), break inner model loop and try next key if any
+          if (lastErrorText.indexOf("API key not valid") !== -1) {
+            break;
+          }
         }
       }
     }
