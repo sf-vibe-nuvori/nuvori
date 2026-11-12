@@ -63,6 +63,12 @@
       font-weight: 800;
       padding: 11px 22px;
     }
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.16);
+      color: #fb7185;
+      border-color: rgba(244, 63, 94, 0.4);
+      font-weight: 700;
+    }
     .btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
 
     /* Top 3 Main Tabs */
@@ -139,7 +145,7 @@
     .upload-box {
       border: 2px dashed #475569;
       border-radius: 14px;
-      padding: 32px 20px;
+      padding: 28px 20px;
       text-align: center;
       cursor: pointer;
       display: flex;
@@ -156,17 +162,75 @@
       gap: 8px;
       margin-bottom: 14px;
     }
-    input[type="text"], input[type="number"] {
-      padding: 10px 12px;
+    input[type="text"], input[type="number"], input[type="date"] {
+      padding: 9px 11px;
       border-radius: 10px;
       border: 1px solid var(--border, #334155);
       background: var(--background, #0f172a);
       color: var(--foreground, #f8fafc);
-      font-size: 16px;
+      font-size: 15px;
       font-family: inherit;
     }
     input[type="text"] { flex: 1; min-width: 0; }
-    input[type="number"] { width: 92px; }
+    input[type="number"] { width: 86px; }
+
+    /* Receipt Review & Edit Staging Box */
+    .review-staging-box {
+      background: rgba(2, 132, 199, 0.09);
+      border: 2px solid #0284c7;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .review-header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .review-meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .review-field-label {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .review-item-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--background, #0f172a);
+      border: 1px solid var(--border, #334155);
+      padding: 8px;
+      border-radius: 10px;
+      flex-wrap: wrap;
+    }
+    .review-item-row input[type="text"] {
+      flex: 1 1 130px;
+      font-size: 14px;
+      padding: 7px 9px;
+    }
+    .review-item-row .price-input {
+      width: 78px;
+      font-size: 14px;
+      padding: 7px 8px;
+    }
+    .review-item-row .cycle-input {
+      width: 68px;
+      font-size: 14px;
+      padding: 7px 8px;
+    }
 
     .item-list { display: flex; flex-direction: column; gap: 10px; }
     .item-card {
@@ -178,6 +242,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
     .item-left {
       display: flex;
@@ -401,20 +466,23 @@
       </div>
     </div>
 
-    <!-- TAB 3: 사진 올리기 -->
+    <!-- TAB 3: 사진 올리기 + 영수증 등록 전 검수/수정 + 적재된 영수증 Revert/수정 -->
     <div id="view-upload" class="card hidden">
       <label class="upload-box">
         <span style="font-size: 34px;">📷</span>
         <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
-        <span id="upload-status-sub" class="sub">사진을 올리면 인벤토리로 자동 이동합니다</span>
+        <span id="upload-status-sub" class="sub">사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다</span>
         <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
       </label>
 
-      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 1클릭 테스트:</div>
+      <!-- 📝 영수증 등록 전 확인 및 수정 (Review & Edit Staging Panel) -->
+      <div id="receipt-review-container" class="hidden"></div>
+
+      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 테스트 (클릭 시 바로 등록되지 않고 확인/수정 창이 열립니다):</div>
       <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
 
       <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
-        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 영수증 DB 적재 기록 (언제 · 어디서 · 품목 · 금액)</div>
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [↩️ 되돌리기/삭제] 가능)</div>
         <div id="receipt-db-log" class="item-list"></div>
       </div>
     </div>
@@ -486,6 +554,16 @@
         return "default_item";
       }
 
+      function inferCycleDaysByName(name) {
+        var s = String(name || "").toLowerCase();
+        if (s.indexOf("시금치") !== -1 || s.indexOf("상추") !== -1 || s.indexOf("연어") !== -1 || s.indexOf("생선") !== -1 || s.indexOf("딸기") !== -1 || s.indexOf("아보카도") !== -1) return 5;
+        if (s.indexOf("우유") !== -1 || s.indexOf("두부") !== -1 || s.indexOf("삼겹살") !== -1 || s.indexOf("고기") !== -1 || s.indexOf("대파") !== -1 || s.indexOf("빵") !== -1) return 8;
+        if (s.indexOf("계란") !== -1 || s.indexOf("달걀") !== -1 || s.indexOf("사과") !== -1 || s.indexOf("양파") !== -1 || s.indexOf("감자") !== -1) return 12;
+        if (s.indexOf("라면") !== -1 || s.indexOf("파스타") !== -1 || s.indexOf("치즈") !== -1 || s.indexOf("커피") !== -1) return 21;
+        if (s.indexOf("간장") !== -1 || s.indexOf("올리브") !== -1 || s.indexOf("식용유") !== -1 || s.indexOf("소금") !== -1) return 60;
+        return 10;
+      }
+
       function getTodayIso() {
         var d = new Date();
         var yyyy = d.getFullYear();
@@ -499,6 +577,10 @@
         var t2 = Date.parse(todayIso || getTodayIso());
         if (isNaN(t1) || isNaN(t2)) return 0;
         return Math.max(0, Math.round((t2 - t1) / (1000 * 60 * 60 * 24)));
+      }
+
+      function deepClone(obj) {
+        return JSON.parse(JSON.stringify(obj));
       }
 
       function getDefaultItems() {
@@ -520,18 +602,22 @@
             id: "rcpt_init_1",
             storeName: "H-Mart",
             purchaseDate: "2026-11-10",
+            addedItemIds: ["tofu", "ramen"],
+            prevItemMap: {},
             items: [
-              { name: "찌개용 두부", price: 2.80 },
-              { name: "신라면 (5봉지)", price: 5.99 }
+              { id: "tofu", name: "찌개용 두부", price: 2.80, cycleDays: 8 },
+              { id: "ramen", name: "신라면 (5봉지)", price: 5.99, cycleDays: 21 }
             ]
           },
           {
             id: "rcpt_init_2",
             storeName: "Trader Joe's",
             purchaseDate: "2026-11-06",
+            addedItemIds: ["spinach", "pasta"],
+            prevItemMap: {},
             items: [
-              { name: "베이비 시금치", price: 3.99 },
-              { name: "스파게티 파스타면", price: 2.50 }
+              { id: "spinach", name: "베이비 시금치", price: 3.99, cycleDays: 5 },
+              { id: "pasta", name: "스파게티 파스타면", price: 2.50, cycleDays: 24 }
             ]
           }
         ];
@@ -539,7 +625,7 @@
 
       var SAMPLE_RECEIPTS = [
         {
-          label: "+ 트레이더조 영수증 (오늘 · 연어·아보카도·우유)",
+          label: "🔍 트레이더조 샘플 검수 (연어·아보카도·우유)",
           storeName: "Trader Joe's",
           daysAgo: 0,
           items: [
@@ -549,7 +635,7 @@
           ]
         },
         {
-          label: "+ H-Mart 영수증 (2일 전 · 삼겹살·대파·계란)",
+          label: "🔍 H-Mart 샘플 검수 (삼겹살·대파·계란)",
           storeName: "H-Mart",
           daysAgo: 2,
           items: [
@@ -580,7 +666,8 @@
                 subMode: parsed.subMode || "inventory",
                 dayOffset: typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0,
                 items: parsed.items,
-                receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts()
+                receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts(),
+                pendingReceipt: null
               };
             }
           }
@@ -590,7 +677,8 @@
           subMode: "inventory",    // "inventory" | "buy"
           dayOffset: 0,
           items: getDefaultItems(),
-          receipts: getDefaultReceipts()
+          receipts: getDefaultReceipts(),
+          pendingReceipt: null     // Staged receipt waiting for user review/edit before DB commit
         };
       }
 
@@ -623,13 +711,11 @@
 
       // ====================================================================
       // 3-State Hierarchical HSMM + Asymmetric Bayesian Decision Engine
-      // States: S2 (잉여/Surplus) -> S1 (정상 소비/Normal) -> S0 (부족/Depleted)
-      // Observable: O_t in {0, 1} (영수증 구매 관측 시점 boughtDay 및 재구매 간격)
       // ====================================================================
       function computeHsmmBelief(elapsedDays, cycleDays) {
-        var bS2 = 1.0; // 구매 직후(d=0) 잉여(S2) 확률 100%
-        var bS1 = 0.0; // 정상 소비(S1)
-        var bS0 = 0.0; // 부족/고갈(S0)
+        var bS2 = 1.0;
+        var bS1 = 0.0;
+        var bS0 = 0.0;
 
         var halfCycle = Math.max(1.0, cycleDays * 0.45);
         var remCycle = Math.max(1.0, cycleDays * 0.55);
@@ -689,7 +775,7 @@
         t.style.display = "block";
         setTimeout(function() {
           t.style.display = "none";
-        }, 3500);
+        }, 4000);
       }
 
       function isNonGroceryNoise(name) {
@@ -708,57 +794,169 @@
         return false;
       }
 
-      function ingestReceiptToDB(receiptObj) {
-        var storeName = receiptObj.storeName || "마트";
+      // ====================================================================
+      // 1. 영수증 등록 전 확인/수정 (Stage -> Review/Edit -> Commit)
+      // 2. 등록된 영수증 되돌리기(Revert/삭제) 및 재수정(Re-edit)
+      // ====================================================================
+      function openReceiptReviewEditor(draftReceipt) {
         var todayIso = getTodayIso();
-        var purchaseDate = receiptObj.purchaseDate || todayIso;
-        var daysAgo = typeof receiptObj.daysAgo === "number"
-          ? receiptObj.daysAgo
-          : daysBetweenIso(purchaseDate, todayIso);
-        var computedBoughtDay = state.dayOffset - daysAgo;
-        var rawItems = Array.isArray(receiptObj.items) ? receiptObj.items : [];
-        var newItems = [];
-        for (var k = 0; k < rawItems.length; k++) {
-          var cand = rawItems[k];
-          if (cand && cand.name && !isNonGroceryNoise(cand.name) && Number(cand.price) > 0) {
-            newItems.push(cand);
+        var rawItems = Array.isArray(draftReceipt.items) ? draftReceipt.items : [];
+        var cleaned = [];
+        for (var i = 0; i < rawItems.length; i++) {
+          var it = rawItems[i];
+          if (it && it.name && !isNonGroceryNoise(it.name)) {
+            cleaned.push({
+              id: it.id || "",
+              name: String(it.name).trim(),
+              price: Number(it.price) > 0 ? Number(it.price) : 4.50,
+              cycleDays: Number(it.cycleDays) > 0 ? Number(it.cycleDays) : inferCycleDaysByName(it.name)
+            });
           }
         }
-        if (newItems.length === 0) {
-          showToast("⚠️ 인식된 식료품 항목이 없어 인벤토리 DB에 추가하지 않았습니다.");
+        if (cleaned.length === 0) {
+          cleaned.push({ id: "", name: "", price: 4.50, cycleDays: 7 });
+        }
+
+        state.pendingReceipt = {
+          editingReceiptId: draftReceipt.editingReceiptId || null,
+          storeName: draftReceipt.storeName || "마트",
+          purchaseDate: draftReceipt.purchaseDate || todayIso,
+          note: draftReceipt.note || "",
+          items: cleaned
+        };
+        state.activeTab = "upload";
+        renderAll();
+      }
+
+      function revertReceiptFromDB(receiptId, silent) {
+        if (!Array.isArray(state.receipts)) return false;
+        var targetIdx = -1;
+        var targetReceipt = null;
+        for (var i = 0; i < state.receipts.length; i++) {
+          if (state.receipts[i].id === receiptId) {
+            targetIdx = i;
+            targetReceipt = state.receipts[i];
+            break;
+          }
+        }
+        if (!targetReceipt) return false;
+
+        var addedIds = Array.isArray(targetReceipt.addedItemIds) ? targetReceipt.addedItemIds : [];
+        var prevMap = targetReceipt.prevItemMap || {};
+        var receiptItemNames = (targetReceipt.items || []).map(function(it) { return it.name; });
+
+        var nextItems = [];
+        for (var j = 0; j < state.items.length; j++) {
+          var item = state.items[j];
+          // 1) If this item was newly added by this receipt, remove it on revert
+          if (addedIds.indexOf(item.id) !== -1) {
+            continue;
+          }
+          // 2) If this item existed before and was updated by this receipt, restore its previous state
+          if (prevMap[item.id]) {
+            nextItems.push(deepClone(prevMap[item.id]));
+            continue;
+          }
+          // 3) Fallback for legacy receipts without addedItemIds: match by item name & purchase date
+          if (
+            addedIds.length === 0 &&
+            Object.keys(prevMap).length === 0 &&
+            receiptItemNames.indexOf(item.name) !== -1 &&
+            (!item.lastPurchaseDate || item.lastPurchaseDate === targetReceipt.purchaseDate)
+          ) {
+            continue;
+          }
+          nextItems.push(item);
+        }
+
+        state.items = nextItems;
+        state.receipts.splice(targetIdx, 1);
+
+        if (!silent) {
+          showToast("↩️ [" + targetReceipt.storeName + " · " + targetReceipt.purchaseDate + "] 영수증이 삭제(Revert)되어 인벤토리에서 되돌려졌습니다.");
+          renderAll();
+        }
+        return true;
+      }
+
+      function commitStagedReceiptToDB() {
+        var pending = state.pendingReceipt;
+        if (!pending) return;
+
+        var storeName = String(pending.storeName || "마트").trim() || "마트";
+        var todayIso = getTodayIso();
+        var purchaseDate = String(pending.purchaseDate || todayIso).trim() || todayIso;
+        var daysAgo = daysBetweenIso(purchaseDate, todayIso);
+        var computedBoughtDay = state.dayOffset - daysAgo;
+
+        var validItems = [];
+        for (var k = 0; k < pending.items.length; k++) {
+          var cand = pending.items[k];
+          var trimmedName = String(cand.name || "").trim();
+          var parsedPrice = Number(cand.price);
+          var parsedCycle = Number(cand.cycleDays);
+          if (trimmedName && !isNonGroceryNoise(trimmedName)) {
+            validItems.push({
+              id: cand.id || "",
+              name: trimmedName,
+              price: (!isNaN(parsedPrice) && parsedPrice > 0) ? parsedPrice : 4.50,
+              cycleDays: (!isNaN(parsedCycle) && parsedCycle >= 1) ? Math.round(parsedCycle) : inferCycleDaysByName(trimmedName)
+            });
+          }
+        }
+
+        if (validItems.length === 0) {
+          showToast("⚠️ 최소 1개 이상의 유효한 식료품 품목명을 입력해 주세요.");
           return;
         }
 
-        for (var i = 0; i < newItems.length; i++) {
-          var n = newItems[i];
+        // If editing an existing receipt, revert its previous effect first
+        var wasEditing = Boolean(pending.editingReceiptId);
+        if (wasEditing) {
+          revertReceiptFromDB(pending.editingReceiptId, true);
+        }
+
+        var addedItemIds = [];
+        var prevItemMap = {};
+
+        for (var i = 0; i < validItems.length; i++) {
+          var n = validItems[i];
           var found = null;
           for (var j = 0; j < state.items.length; j++) {
-            if (state.items[j].id === n.id || state.items[j].name === n.name) {
+            if ((n.id && state.items[j].id === n.id) || state.items[j].name === n.name) {
               found = state.items[j];
               break;
             }
           }
+
           if (found) {
+            if (!prevItemMap[found.id]) {
+              prevItemMap[found.id] = deepClone(found);
+            }
             var interval = Math.abs(computedBoughtDay - found.boughtDay);
-            if (interval >= 2 && interval <= 90) {
+            if (n.cycleDays && n.cycleDays > 0) {
+              found.cycleDays = n.cycleDays;
+            } else if (interval >= 2 && interval <= 90) {
               found.cycleDays = Math.max(2, Math.round(0.7 * found.cycleDays + 0.3 * interval));
             }
             found.boughtDay = computedBoughtDay;
-            if (n.price && n.price > 0) found.price = n.price;
+            found.price = n.price;
             found.lastStore = storeName;
             found.lastPurchaseDate = purchaseDate;
             found.manualNeedToBuy = false;
             found.isManuallyAdded = false;
             found.checkedForOrder = true;
           } else {
+            var newId = n.id || ("custom_" + Date.now() + "_" + i);
+            addedItemIds.push(newId);
             state.items.unshift({
-              id: n.id || ("custom_" + Date.now() + "_" + i),
+              id: newId,
               thumbKey: inferThumbKey(n.name),
               name: n.name,
-              price: n.price || 4.50,
+              price: n.price,
               lastStore: storeName,
               lastPurchaseDate: purchaseDate,
-              cycleDays: n.cycleDays || 10,
+              cycleDays: n.cycleDays || inferCycleDaysByName(n.name),
               boughtDay: computedBoughtDay,
               manualNeedToBuy: false,
               isManuallyAdded: false,
@@ -769,18 +967,207 @@
 
         if (!Array.isArray(state.receipts)) state.receipts = [];
         state.receipts.unshift({
-          id: "rcpt_" + Date.now(),
+          id: pending.editingReceiptId || ("rcpt_" + Date.now()),
           storeName: storeName,
           purchaseDate: purchaseDate,
-          items: newItems.map(function(it) {
-            return { name: it.name, price: it.price || 4.50 };
+          addedItemIds: addedItemIds,
+          prevItemMap: prevItemMap,
+          items: validItems.map(function(it) {
+            return { id: it.id, name: it.name, price: it.price, cycleDays: it.cycleDays };
           })
         });
 
+        state.pendingReceipt = null;
         state.activeTab = "main";
         state.subMode = "inventory";
-        showToast("✓ [" + storeName + " · " + purchaseDate + "] " + newItems.length + "개 품목 DB 적재 완료!");
+        showToast(
+          wasEditing
+            ? ("✓ [" + storeName + " · " + purchaseDate + "] 영수증 수정사항이 인벤토리 DB에 반영되었습니다!")
+            : ("✓ [" + storeName + " · " + purchaseDate + "] " + validItems.length + "개 품목 확인 및 DB 등록 완료!")
+        );
         renderAll();
+      }
+
+      function renderReceiptReviewEditor() {
+        var container = document.getElementById("receipt-review-container");
+        if (!container) return;
+        container.replaceChildren();
+
+        var pending = state.pendingReceipt;
+        if (!pending) {
+          container.classList.add("hidden");
+          return;
+        }
+        container.classList.remove("hidden");
+
+        var box = el("div", "review-staging-box");
+
+        var titleRow = el("div", "review-header-title");
+        titleRow.appendChild(
+          el(
+            "span",
+            "",
+            pending.editingReceiptId
+              ? "✏️ 등록된 영수증 다시 수정하기"
+              : "📝 영수증 인식 결과 확인 및 수정 (DB 등록 전)"
+          )
+        );
+        var cancelTopBtn = el("button", "btn-sm", "✕ 닫기");
+        cancelTopBtn.type = "button";
+        cancelTopBtn.addEventListener("click", function() {
+          state.pendingReceipt = null;
+          renderReceiptReviewEditor();
+        });
+        titleRow.appendChild(cancelTopBtn);
+        box.appendChild(titleRow);
+
+        if (pending.note) {
+          box.appendChild(el("div", "sub", pending.note));
+        } else {
+          box.appendChild(
+            el(
+              "div",
+              "sub",
+              "잘못 파싱된 품목명·금액·소비주기를 수정하거나 불필요한 행을 [✕]로 지운 뒤 아래 [✅ 인벤토리 DB에 등록]을 눌러주세요."
+            )
+          );
+        }
+
+        // Store & Date Row
+        var metaRow = el("div", "review-meta-row");
+
+        var storeCol = el("div", "");
+        storeCol.appendChild(el("div", "review-field-label", "🏪 상점명 (마트 이름)"));
+        var storeInput = document.createElement("input");
+        storeInput.type = "text";
+        storeInput.style.width = "100%";
+        storeInput.value = pending.storeName;
+        storeInput.addEventListener("input", function() {
+          pending.storeName = storeInput.value;
+        });
+        storeCol.appendChild(storeInput);
+        metaRow.appendChild(storeCol);
+
+        var dateCol = el("div", "");
+        dateCol.appendChild(el("div", "review-field-label", "📅 구매일자 (YYYY-MM-DD)"));
+        var dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.style.width = "100%";
+        dateInput.value = pending.purchaseDate;
+        dateInput.addEventListener("change", function() {
+          pending.purchaseDate = dateInput.value;
+        });
+        dateCol.appendChild(dateInput);
+        metaRow.appendChild(dateCol);
+
+        box.appendChild(metaRow);
+
+        // Column header labels
+        var colHeader = el("div", "review-field-label", "품목명  |  가격($)  |  예상 소비주기(일)  |  삭제");
+        box.appendChild(colHeader);
+
+        // Editable item rows
+        var rowsWrap = el("div", "item-list");
+        for (var i = 0; i < pending.items.length; i++) {
+          (function(idx) {
+            var it = pending.items[idx];
+            var row = el("div", "review-item-row");
+
+            var nameIn = document.createElement("input");
+            nameIn.type = "text";
+            nameIn.placeholder = "품목명 (예: 유기농 우유)";
+            nameIn.value = it.name;
+            nameIn.addEventListener("input", function() {
+              it.name = nameIn.value;
+            });
+            row.appendChild(nameIn);
+
+            var priceIn = document.createElement("input");
+            priceIn.type = "number";
+            priceIn.className = "price-input";
+            priceIn.step = "0.01";
+            priceIn.min = "0";
+            priceIn.placeholder = "$4.50";
+            priceIn.value = it.price;
+            priceIn.addEventListener("input", function() {
+              it.price = parseFloat(priceIn.value) || 0;
+            });
+            row.appendChild(priceIn);
+
+            var cycleIn = document.createElement("input");
+            cycleIn.type = "number";
+            cycleIn.className = "cycle-input";
+            cycleIn.min = "1";
+            cycleIn.max = "365";
+            cycleIn.title = "예상 소비주기(일)";
+            cycleIn.value = it.cycleDays || 7;
+            cycleIn.addEventListener("input", function() {
+              it.cycleDays = parseInt(cycleIn.value, 10) || 7;
+            });
+            row.appendChild(cycleIn);
+
+            var delBtn = el("button", "btn-danger btn-sm", "✕");
+            delBtn.type = "button";
+            delBtn.title = "이 품목 제외";
+            delBtn.addEventListener("click", function() {
+              pending.items.splice(idx, 1);
+              renderReceiptReviewEditor();
+            });
+            row.appendChild(delBtn);
+
+            rowsWrap.appendChild(row);
+          })(i);
+        }
+        box.appendChild(rowsWrap);
+
+        // Add row + Commit / Cancel buttons
+        var actionRow = el("div", "header-row");
+        actionRow.style.marginTop = "4px";
+
+        var addRowBtn = el("button", "btn-sm", "+ 품목 행 추가");
+        addRowBtn.type = "button";
+        addRowBtn.addEventListener("click", function() {
+          pending.items.push({ id: "", name: "", price: 4.50, cycleDays: 7 });
+          renderReceiptReviewEditor();
+        });
+        actionRow.appendChild(addRowBtn);
+
+        var rightBtns = el("div", "btn-group");
+        if (pending.editingReceiptId) {
+          var revertBtn = el("button", "btn-danger btn-sm", "🗑️ 이 영수증 아예 삭제 (Revert)");
+          revertBtn.type = "button";
+          revertBtn.addEventListener("click", function() {
+            var targetId = pending.editingReceiptId;
+            state.pendingReceipt = null;
+            revertReceiptFromDB(targetId, false);
+          });
+          rightBtns.appendChild(revertBtn);
+        } else {
+          var cancelBtn = el("button", "btn-sm", "등록 취소");
+          cancelBtn.type = "button";
+          cancelBtn.addEventListener("click", function() {
+            state.pendingReceipt = null;
+            renderReceiptReviewEditor();
+            showToast("영수증 등록이 취소되었습니다.");
+          });
+          rightBtns.appendChild(cancelBtn);
+        }
+
+        var commitBtn = el(
+          "button",
+          "btn-order btn-sm",
+          pending.editingReceiptId ? "✅ 수정사항 DB 반영" : "✅ 확인 완료 · 인벤토리 DB 등록"
+        );
+        commitBtn.type = "button";
+        commitBtn.addEventListener("click", function() {
+          commitStagedReceiptToDB();
+        });
+        rightBtns.appendChild(commitBtn);
+
+        actionRow.appendChild(rightBtns);
+        box.appendChild(actionRow);
+
+        container.appendChild(box);
       }
 
       function addNewItemToBuyList() {
@@ -875,16 +1262,26 @@
               var yyyy = d.getFullYear();
               var mm = String(d.getMonth() + 1).padStart(2, "0");
               var dd = String(d.getDate()).padStart(2, "0");
-              ingestReceiptToDB({
+              openReceiptReviewEditor({
                 storeName: sr.storeName,
                 purchaseDate: yyyy + "-" + mm + "-" + dd,
-                daysAgo: sr.daysAgo || 0,
-                items: sr.items
+                items: deepClone(sr.items)
               });
             });
             wrap.appendChild(btn);
           })(SAMPLE_RECEIPTS[i]);
         }
+
+        var manualBtn = el("button", "btn-sm", "+ 빈 영수증 직접 입력");
+        manualBtn.type = "button";
+        manualBtn.addEventListener("click", function() {
+          openReceiptReviewEditor({
+            storeName: "마트",
+            purchaseDate: getTodayIso(),
+            items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
+          });
+        });
+        wrap.appendChild(manualBtn);
       }
 
       function renderReceiptDbLog() {
@@ -892,21 +1289,47 @@
         if (!logWrap) return;
         logWrap.replaceChildren();
         var list = Array.isArray(state.receipts) ? state.receipts : [];
-        for (var i = 0; i < Math.min(5, list.length); i++) {
-          var r = list[i];
-          var card = el("div", "item-card");
-          var info = el("div", "item-info");
-          var itemSummary = (r.items || []).map(function(it) {
-            return it.name + "($" + Number(it.price || 0).toFixed(2) + ")";
-          }).join(", ");
-          var sum = (r.items || []).reduce(function(acc, it) {
-            return acc + Number(it.price || 0);
-          }, 0);
-          info.appendChild(el("div", "item-name", "🏪 " + r.storeName + "  ·  📅 " + r.purchaseDate));
-          info.appendChild(el("div", "item-days", itemSummary));
-          card.appendChild(info);
-          card.appendChild(el("span", "pill pill-skip", "$" + sum.toFixed(2)));
-          logWrap.appendChild(card);
+        if (list.length === 0) {
+          logWrap.appendChild(el("div", "sub", "등록된 영수증 내역이 없습니다."));
+          return;
+        }
+        for (var i = 0; i < Math.min(8, list.length); i++) {
+          (function(r) {
+            var card = el("div", "item-card");
+            var info = el("div", "item-info");
+            var itemSummary = (r.items || []).map(function(it) {
+              return it.name + "($" + Number(it.price || 0).toFixed(2) + ")";
+            }).join(", ");
+            var sum = (r.items || []).reduce(function(acc, it) {
+              return acc + Number(it.price || 0);
+            }, 0);
+            info.appendChild(el("div", "item-name", "🏪 " + r.storeName + "  ·  📅 " + r.purchaseDate + "  ($" + sum.toFixed(2) + ")"));
+            info.appendChild(el("div", "item-days", itemSummary));
+            card.appendChild(info);
+
+            var actions = el("div", "btn-group");
+            var editBtn = el("button", "btn-sm", "✏️ 수정");
+            editBtn.type = "button";
+            editBtn.addEventListener("click", function() {
+              openReceiptReviewEditor({
+                editingReceiptId: r.id,
+                storeName: r.storeName,
+                purchaseDate: r.purchaseDate,
+                items: deepClone(r.items || [])
+              });
+            });
+            actions.appendChild(editBtn);
+
+            var revertBtn = el("button", "btn-danger btn-sm", "↩️ 되돌리기(삭제)");
+            revertBtn.type = "button";
+            revertBtn.addEventListener("click", function() {
+              revertReceiptFromDB(r.id, false);
+            });
+            actions.appendChild(revertBtn);
+
+            card.appendChild(actions);
+            logWrap.appendChild(card);
+          })(list[i]);
         }
       }
 
@@ -1074,14 +1497,13 @@
           detectedDays = 0;
         }
 
-        // Check if user says an item ran out ("두부 다 먹었어", "삼겹살 추가해줘", etc.)
         var depletedItemName = null;
         var asksDepleted = (
           text.indexOf("다 먹") !== -1 ||
           text.indexOf("떨어졌") !== -1 ||
           text.indexOf("없어") !== -1 ||
           text.indexOf("추가") !== -1 ||
-          text.indexOf("사야") !== -1 && text.indexOf("뭐") === -1 && text.indexOf("무엇") === -1
+          (text.indexOf("사야") !== -1 && text.indexOf("뭐") === -1 && text.indexOf("무엇") === -1)
         );
         if (asksDepleted) {
           for (var i = 0; i < state.items.length; i++) {
@@ -1236,7 +1658,6 @@
         var aiNote = el("div", "chat-ai-note", dynamicTip);
         botBubble.appendChild(aiNote);
 
-        // Optional async enrichment via Netlify Gemini endpoint
         if (userQuery) {
           var invSummary = state.items.map(function(it) {
             var ev = evaluateItem(it);
@@ -1342,6 +1763,7 @@
         viewUpload.classList.toggle("hidden", state.activeTab !== "upload");
 
         renderDayButtons();
+        renderReceiptReviewEditor();
         renderSampleButtons();
         renderReceiptDbLog();
         renderMainView();
@@ -1389,7 +1811,7 @@
         reader.onload = function(e) {
           var img = new Image();
           img.onload = function() {
-            var maxDim = 1024;
+            var maxDim = 1600;
             var w = img.width;
             var h = img.height;
             if (w > maxDim || h > maxDim) {
@@ -1406,7 +1828,7 @@
             canvas.height = h;
             var ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, w, h);
-            var dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            var dataUrl = canvas.toDataURL("image/jpeg", 0.88);
             var base64Data = dataUrl.split(",")[1];
             callback(null, base64Data);
           };
@@ -1424,17 +1846,17 @@
         var statusTitle = document.getElementById("upload-status-title");
         var statusSub = document.getElementById("upload-status-sub");
         statusTitle.textContent = "⏳ 영수증 AI 분석 중...";
-        statusSub.textContent = "상점명 · 구매일자 · 품목 · 금액 추출 중";
+        statusSub.textContent = "인식 완료 후 바로 등록되지 않고 확인/수정 창이 열립니다";
 
         compressImageToBase64(file, function(err, base64Jpeg) {
           if (err || !base64Jpeg) {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
-            ingestReceiptToDB({
-              storeName: SAMPLE_RECEIPTS[0].storeName,
+            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+            openReceiptReviewEditor({
+              storeName: "마트",
               purchaseDate: getTodayIso(),
-              daysAgo: 0,
-              items: SAMPLE_RECEIPTS[0].items
+              note: "⚠️ 이미지 읽기에 실패하여 직접 입력/수정 모드로 열렸습니다.",
+              items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
             });
             return;
           }
@@ -1445,34 +1867,53 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               imageBase64: base64Jpeg,
+              mimeType: "image/jpeg",
               existingNames: existingNames,
               todayIso: getTodayIso()
             })
           })
           .then(function(res) {
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.json();
+            return res.json().then(function(body) {
+              if (!res.ok) {
+                throw new Error((body && (body.detail || body.error)) || ("HTTP " + res.status));
+              }
+              return body;
+            });
           })
           .then(function(parsed) {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
+            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
             if (!parsed || parsed.isValidGroceryReceipt === false || !Array.isArray(parsed.items) || parsed.items.length === 0) {
               var reasonMsg = (parsed && parsed.reason)
                 ? parsed.reason
                 : "식료품 영수증이 아니거나 식재료 항목을 찾을 수 없습니다.";
-              showToast("⚠️ 등록 제외: " + reasonMsg);
+              showToast("⚠️ 자동 인식 제외: " + reasonMsg + " (필요 시 아래에서 직접 수정·추가 가능)");
+              openReceiptReviewEditor({
+                storeName: (parsed && parsed.storeName) || "마트",
+                purchaseDate: (parsed && parsed.purchaseDate) || getTodayIso(),
+                note: "⚠️ AI 판별 메모: " + reasonMsg + " — 직접 품목을 입력하거나 [✕ 닫기]를 눌러 취소하세요.",
+                items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
+              });
               return;
             }
-            ingestReceiptToDB({
+            showToast("🔍 영수증 " + parsed.items.length + "개 품목 인식 완료! 내용을 확인·수정한 뒤 등록을 눌러주세요.");
+            openReceiptReviewEditor({
               storeName: parsed.storeName || "마트",
               purchaseDate: parsed.purchaseDate || getTodayIso(),
               items: parsed.items
             });
           })
-          .catch(function() {
+          .catch(function(errObj) {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 인벤토리로 자동 이동합니다";
-            showToast("⚠️ 영수증 분석 서버 연결에 실패했습니다. (테스트용이면 아래 샘플 영수증 버튼을 눌러보세요)");
+            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+            var errMsg = (errObj && errObj.message) ? errObj.message : "서버 연결 실패";
+            showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정·입력할 수 있습니다.");
+            openReceiptReviewEditor({
+              storeName: "마트",
+              purchaseDate: getTodayIso(),
+              note: "⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력하거나 샘플 영수증으로 테스트해 보세요.",
+              items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
+            });
           });
         });
 
