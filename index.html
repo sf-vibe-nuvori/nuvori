@@ -14,11 +14,8 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
       background:
-        radial-gradient(1100px 500px at 85% -10%, rgba(56, 189, 248, 0.22), transparent 60%),
-        radial-gradient(900px 480px at -15% 20%, rgba(167, 139, 250, 0.20), transparent 60%),
-        radial-gradient(900px 600px at 110% 85%, rgba(52, 211, 153, 0.16), transparent 60%),
-        linear-gradient(165deg, #0b1226 0%, #101a38 55%, #0d1b33 100%);
-      background-attachment: fixed;
+        radial-gradient(900px 480px at 80% -10%, rgba(56, 189, 248, 0.14), transparent 60%),
+        linear-gradient(170deg, #0b1226, #101a38);
       color: var(--foreground, #f8fafc);
       padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
       line-height: 1.45;
@@ -26,11 +23,11 @@
     }
     .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
     .card {
-      background: linear-gradient(155deg, rgba(51, 65, 102, 0.72), rgba(24, 36, 66, 0.88));
-      border: 1px solid rgba(125, 155, 220, 0.35);
+      background: rgba(30, 41, 59, 0.88);
+      border: 1px solid #334155;
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 6px 22px rgba(4, 10, 34, 0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     .header-row {
       display: flex;
@@ -39,15 +36,7 @@
       align-items: center;
       gap: 10px;
     }
-    h1 {
-      font-size: 20px;
-      font-weight: 800;
-      background: linear-gradient(92deg, #34d399, #38bdf8 45%, #a78bfa 80%, #fb7185);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      color: #38bdf8;
-    }
+    h1 { font-size: 19px; font-weight: 800; color: #38bdf8; }
     .sub { font-size: 13px; color: var(--muted-foreground, #94a3b8); }
     .btn-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     button {
@@ -62,27 +51,25 @@
       color: var(--foreground, #f8fafc);
       transition: all 0.15s;
     }
-    button:hover { opacity: 0.94; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    button:hover { opacity: 0.9; }
     .btn-primary {
-      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      background: #0284c7;
       color: #ffffff;
-      border-color: rgba(56, 189, 248, 0.6);
+      border-color: #0369a1;
       font-weight: 700;
-      box-shadow: 0 3px 12px rgba(56, 189, 248, 0.35);
     }
     .btn-order {
-      background: linear-gradient(135deg, #10b981, #84cc16);
+      background: #10b981;
       color: #ffffff;
-      border-color: rgba(52, 211, 153, 0.6);
+      border-color: #059669;
       font-size: 14px;
       font-weight: 800;
       padding: 11px 22px;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
     }
     .btn-danger {
-      background: linear-gradient(135deg, rgba(244, 63, 94, 0.25), rgba(251, 146, 60, 0.22));
+      background: rgba(244, 63, 94, 0.16);
       color: #fb7185;
-      border-color: rgba(244, 63, 94, 0.45);
+      border-color: rgba(244, 63, 94, 0.4);
       font-weight: 700;
     }
     .btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
@@ -111,19 +98,6 @@
     .tab-btn.active {
       background: #0284c7;
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
-    }
-    #tab-main-btn.active {
-      background: linear-gradient(135deg, #10b981, #22d3ee);
-      box-shadow: 0 3px 12px rgba(16, 185, 129, 0.45);
-    }
-    #tab-chat-btn.active {
-      background: linear-gradient(135deg, #8b5cf6, #ec4899);
-      box-shadow: 0 3px 12px rgba(139, 92, 246, 0.45);
-    }
-    #tab-upload-btn.active {
-      background: linear-gradient(135deg, #f97316, #f43f5e);
-      box-shadow: 0 3px 12px rgba(249, 115, 22, 0.45);
     }
 
     /* Segmented Toggle inside Tab 1 (인벤토리 <-> 쇼핑 리스트) */
@@ -154,25 +128,23 @@
       font-weight: 700;
     }
     .seg-btn.active {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(167, 139, 250, 0.28));
+      background: rgba(56, 189, 248, 0.16);
       color: #e0f2fe;
-      box-shadow: 0 1px 6px rgba(56, 189, 248, 0.35);
       border: 1px solid #38bdf8;
     }
 
     .toast {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(56, 189, 248, 0.20));
-      border: 1px solid rgba(52, 211, 153, 0.55);
-      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
       padding: 12px 16px;
       border-radius: 12px;
       font-size: 13px;
       font-weight: 700;
       display: none;
-      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
     }
     .upload-box {
-      border: 2px dashed rgba(94, 234, 212, 0.55);
+      border: 2px dashed #475569;
       border-radius: 14px;
       padding: 28px 20px;
       text-align: center;
@@ -182,10 +154,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      background: linear-gradient(160deg, rgba(56, 189, 248, 0.07), rgba(167, 139, 250, 0.08));
+      background: rgba(255, 255, 255, 0.02);
       margin-bottom: 16px;
     }
-    .upload-box:hover { border-color: #f97316; background: rgba(249, 115, 22, 0.08); }
+    .upload-box:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
     .input-row {
       display: flex;
       gap: 8px;
@@ -194,13 +166,13 @@
     input[type="text"], input[type="number"], input[type="date"] {
       padding: 9px 11px;
       border-radius: 10px;
-      border: 1px solid rgba(94, 140, 220, 0.5);
-      background: rgba(10, 16, 34, 0.85);
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.85);
       color: var(--foreground, #f8fafc);
       font-size: 16px;
       font-family: inherit;
     }
-    input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25); }
+    input:focus { outline: none; border-color: #38bdf8; }
     input[type="text"] { flex: 1; min-width: 0; }
     input[type="number"] { width: 86px; }
 
@@ -264,8 +236,8 @@
 
     .item-list { display: flex; flex-direction: column; gap: 10px; }
     .item-card {
-      background: linear-gradient(140deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 66, 0.92));
-      border: 1px solid rgba(71, 105, 167, 0.55);
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #334155;
       border-radius: 12px;
       padding: 12px 14px;
       display: flex;
@@ -365,10 +337,6 @@
     .chip-btn:hover {
       background: rgba(56, 189, 248, 0.22);
     }
-    .chip-btn:nth-child(4n+1) { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
-    .chip-btn:nth-child(4n+2) { background: rgba(167, 139, 250, 0.14); border-color: rgba(167, 139, 250, 0.42); color: #c4b5fd; }
-    .chip-btn:nth-child(4n+3) { background: rgba(251, 146, 60, 0.13); border-color: rgba(251, 146, 60, 0.42); color: #fdba74; }
-    .chip-btn:nth-child(4n)   { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc; }
     .chat-messages {
       display: flex;
       flex-direction: column;
@@ -380,7 +348,7 @@
     }
     .chat-bubble-user {
       align-self: flex-end;
-      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      background: #0284c7;
       color: #ffffff;
       padding: 10px 14px;
       border-radius: 16px 16px 4px 16px;
@@ -467,7 +435,7 @@
       <!-- 서브뷰 B: 쇼핑 리스트 + 합계 + 주문 -->
       <div id="subview-buy" class="hidden">
         <div class="input-row">
-          <input id="input-buy-name" type="text" placeholder="쇼핑 리스트에 새 아이템 직접 입력 (예: 삼겹살, 대파, 커피)" />
+          <input id="input-buy-name" type="text" placeholder="품목명 입력 (예: 삼겹살)" />
           <input id="input-buy-price" type="number" step="0.01" min="0" placeholder="$4.50" />
           <button id="btn-add-buy-item" type="button" class="btn-primary">+ 추가</button>
         </div>
@@ -489,7 +457,7 @@
 
     <!-- TAB 2: 💬 장보기 챗 (자연어 시점·소진 질의 -> 즉시 쇼핑리스트 카드 표시) -->
     <div id="view-chat" class="card hidden">
-      <div class="sub" style="font-weight: 700; margin-bottom: 8px;">💡 원클릭 추천 질문 (누르면 바로 쇼핑 리스트가 나옵니다):</div>
+      <div class="sub" style="font-weight: 700; margin-bottom: 8px;">💡 추천 질문</div>
       <div id="chat-quick-chips" class="chat-chips"></div>
 
       <div id="chat-messages" class="chat-messages"></div>
@@ -505,18 +473,18 @@
       <label class="upload-box">
         <span style="font-size: 34px;">📷</span>
         <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
-        <span id="upload-status-sub" class="sub">사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다</span>
+        <span id="upload-status-sub" class="sub">사진을 올리면 품목을 확인한 뒤 등록합니다</span>
         <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
       </label>
 
       <!-- 📝 영수증 등록 전 확인 및 수정 (Review & Edit Staging Panel) -->
       <div id="receipt-review-container" class="hidden"></div>
 
-      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 테스트 (클릭 시 바로 등록되지 않고 확인/수정 창이 열립니다):</div>
+      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증</div>
       <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
 
       <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
-        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [↩️ 되돌리기/삭제] 가능)</div>
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증</div>
         <div id="receipt-db-log" class="item-list"></div>
       </div>
     </div>
@@ -659,7 +627,7 @@
 
       var SAMPLE_RECEIPTS = [
         {
-          label: "🔍 트레이더조 샘플 검수 (연어·아보카도·우유)",
+          label: "🔍 트레이더조 샘플",
           storeName: "Trader Joe's",
           daysAgo: 0,
           items: [
@@ -669,7 +637,7 @@
           ]
         },
         {
-          label: "🔍 H-Mart 샘플 검수 (삼겹살·대파·계란)",
+          label: "🔍 H-Mart 샘플",
           storeName: "H-Mart",
           daysAgo: 2,
           items: [
@@ -1065,7 +1033,7 @@
             el(
               "div",
               "sub",
-              "잘못 파싱된 품목명·금액·소비주기를 수정하거나 불필요한 행을 [✕]로 지운 뒤 아래 [✅ 인벤토리 DB에 등록]을 눌러주세요."
+              "품목을 확인·수정한 뒤 [✅ 등록]을 눌러주세요."
             )
           );
         }
@@ -1489,7 +1457,7 @@
 
         var orderTotal = 0.0;
         if (buyEntries.length === 0) {
-          var empty = el("div", "sub", "쇼핑 리스트에 품목이 없습니다. 위 입력창에서 직접 추가하거나 [+7일]을 눌러보세요.");
+          var empty = el("div", "sub", "담을 품목이 없습니다. 위에서 추가해 보세요.");
           empty.style.padding = "20px";
           empty.style.textAlign = "center";
           buyList.appendChild(empty);
@@ -1806,7 +1774,7 @@
             el(
               "div",
               "chat-bot-text",
-              "안녕하세요! 장본 지 며칠 지났는지 말씀하시거나 \"오늘 장본지 3일 됐는데, 뭐 사야돼?\"처럼 물어보시면 3-State HSMM 소진 예측을 돌려 사야 할 쇼핑 리스트를 바로 보여드립니다."
+              "안녕하세요! \"장본 지 3일 됐는데 뭐 사야 돼?\"처럼 물어보시면 사야 할 쇼핑 리스트를 바로 보여드립니다."
             )
           );
           msgContainer.appendChild(welcome);
@@ -1935,7 +1903,7 @@
         })
         .then(function(parsed) {
           statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-          statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+          statusSub.textContent = "사진을 올리면 품목을 확인한 뒤 등록합니다";
           if (!parsed || parsed.isValidGroceryReceipt === false || !Array.isArray(parsed.items) || parsed.items.length === 0) {
             var reasonMsg = (parsed && parsed.reason)
               ? parsed.reason
@@ -1958,7 +1926,7 @@
         })
         .catch(function(errObj) {
           statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-          statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+          statusSub.textContent = "사진을 올리면 품목을 확인한 뒤 등록합니다";
           var errMsg = (errObj && errObj.message) ? errObj.message : "서버 연결 실패";
           var isKeyInvalid = errMsg.indexOf("API key not valid") !== -1 || errMsg.indexOf("GEMINI_API_KEY") !== -1;
           showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정하거나 키를 재입력할 수 있습니다.");
@@ -1986,7 +1954,7 @@
         compressImageToBase64(file, function(err, base64Jpeg) {
           if (err || !base64Jpeg) {
             statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";
-            statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
+            statusSub.textContent = "사진을 올리면 품목을 확인한 뒤 등록합니다";
             openReceiptReviewEditor({
               storeName: "마트",
               purchaseDate: getTodayIso(),
