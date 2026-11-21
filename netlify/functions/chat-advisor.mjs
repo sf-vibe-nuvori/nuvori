@@ -29,7 +29,7 @@ export default async (req) => {
       "위 인벤토리 상태(사야 할 품목 isShort=true vs 아직 집에 있는 품목 isShort=false, 경과일 elapsed, 고갈확률 pDepleted)를 바탕으로 " +
       "핵심 답변과 음식 낭비를 줄이는 실용적인 팁(예: 집에 남은 재료 소진법 또는 과잉구매 방지 조언)을 2~3문장의 자연스럽고 친절한 한국어로 답해주세요.";
 
-    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash-lite"];
     let lastStatus = 502;
     let lastErrorText = "";
 

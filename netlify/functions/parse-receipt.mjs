@@ -44,7 +44,7 @@ export default async (req) => {
       "   - quantity: 구매 수량(정수, 기본 1).\n" +
       "   - cycleDays: 일반 가정 소비주기 일수(잎채소/생선/베리류 4~5일, 우유/두부/계란/육류 7~10일, 라면/파스타/냉동식품 21일, 양념/오일/쌀 60일).";
 
-    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.5-flash-lite"];
     let lastStatus = 502;
     let lastErrorText = "";
 
