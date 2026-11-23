@@ -3,8 +3,8 @@
   "short_name": "Nuvori",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#dc2626",
+  "theme_color": "#dc2626",
   "icons": [
     {
       "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%230284c7'/><text x='96' y='130' font-size='104' text-anchor='middle'>🥦</text></svg>",

@@ -4,27 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Nuvori" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#dc2626" />
   <link rel="manifest" href="manifest.json" />
   <title>Nuvori — 스마트 장보기</title>
   <style>
+    :root {
+      --background: #ffffff;
+      --foreground: #0f172a;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --secondary: #f1f5f9;
+      --muted-foreground: #64748b;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
-      background: var(--background, #0f172a);
-      color: var(--foreground, #f8fafc);
+      background: #dc2626;
+      color: var(--foreground, #0f172a);
       padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
       line-height: 1.45;
     }
     .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
     .card {
-      background: var(--card, #1e293b);
-      border: 1px solid var(--border, #334155);
+      background: var(--card, #ffffff);
+      border: 1px solid var(--border, #e2e8f0);
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
     .header-row {
       display: flex;
@@ -34,7 +42,7 @@
       gap: 10px;
     }
     h1 { font-size: 19px; font-weight: 800; }
-    .sub { font-size: 13px; color: var(--muted-foreground, #94a3b8); }
+    .sub { font-size: 13px; color: var(--muted-foreground, #64748b); }
     .btn-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     button {
       cursor: pointer;
@@ -43,9 +51,9 @@
       font-weight: 600;
       border-radius: 10px;
       padding: 8px 14px;
-      border: 1px solid var(--border, #334155);
-      background: var(--secondary, #334155);
-      color: var(--foreground, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--secondary, #f1f5f9);
+      color: var(--foreground, #0f172a);
       transition: all 0.15s;
     }
     button:hover { opacity: 0.92; }
@@ -65,7 +73,7 @@
     }
     .btn-danger {
       background: rgba(244, 63, 94, 0.16);
-      color: #fb7185;
+      color: #e11d48;
       border-color: rgba(244, 63, 94, 0.4);
       font-weight: 700;
     }
@@ -76,10 +84,10 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 6px;
-      background: var(--card, #1e293b);
+      background: var(--card, #ffffff);
       padding: 6px;
       border-radius: 14px;
-      border: 1px solid var(--border, #334155);
+      border: 1px solid var(--border, #e2e8f0);
     }
     .tab-btn {
       padding: 11px 8px;
@@ -88,7 +96,7 @@
       font-size: 13px;
       font-weight: 700;
       background: transparent;
-      color: var(--muted-foreground, #94a3b8);
+      color: var(--muted-foreground, #64748b);
       text-align: center;
       white-space: nowrap;
     }
@@ -107,35 +115,35 @@
       gap: 10px;
       margin-bottom: 16px;
       padding-bottom: 14px;
-      border-bottom: 1px solid var(--border, #334155);
+      border-bottom: 1px solid var(--border, #e2e8f0);
     }
     .seg-toggle {
       display: inline-flex;
-      background: var(--background, #0f172a);
+      background: #f1f5f9;
       padding: 4px;
       border-radius: 12px;
-      border: 1px solid var(--border, #334155);
+      border: 1px solid var(--border, #e2e8f0);
     }
     .seg-btn {
       border: none;
       background: transparent;
-      color: var(--muted-foreground, #94a3b8);
+      color: var(--muted-foreground, #64748b);
       padding: 8px 16px;
       border-radius: 9px;
       font-size: 13px;
       font-weight: 700;
     }
     .seg-btn.active {
-      background: var(--card, #1e293b);
-      color: var(--foreground, #f8fafc);
+      background: var(--card, #ffffff);
+      color: var(--foreground, #0f172a);
       box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-      border: 1px solid #38bdf8;
+      border: 1px solid #0284c7;
     }
 
     .toast {
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid rgba(16, 185, 129, 0.5);
-      color: #34d399;
+      color: #047857;
       padding: 12px 16px;
       border-radius: 12px;
       font-size: 13px;
@@ -143,7 +151,7 @@
       display: none;
     }
     .upload-box {
-      border: 2px dashed #475569;
+      border: 2px dashed #cbd5e1;
       border-radius: 14px;
       padding: 28px 20px;
       text-align: center;
@@ -153,10 +161,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      background: rgba(255,255,255,0.02);
+      background: #f8fafc;
       margin-bottom: 16px;
     }
-    .upload-box:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+    .upload-box:hover { border-color: #0284c7; background: rgba(2, 132, 199, 0.06); }
     .input-row {
       display: flex;
       gap: 8px;
@@ -165,9 +173,9 @@
     input[type="text"], input[type="number"], input[type="date"] {
       padding: 9px 11px;
       border-radius: 10px;
-      border: 1px solid var(--border, #334155);
-      background: var(--background, #0f172a);
-      color: var(--foreground, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--background, #ffffff);
+      color: var(--foreground, #0f172a);
       font-size: 15px;
       font-family: inherit;
     }
@@ -188,7 +196,7 @@
     .review-header-title {
       font-size: 15px;
       font-weight: 800;
-      color: #38bdf8;
+      color: #0369a1;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -202,7 +210,7 @@
     }
     .review-field-label {
       font-size: 11px;
-      color: #94a3b8;
+      color: #64748b;
       margin-bottom: 4px;
       font-weight: 700;
     }
@@ -210,8 +218,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: var(--background, #0f172a);
-      border: 1px solid var(--border, #334155);
+      background: var(--background, #ffffff);
+      border: 1px solid var(--border, #e2e8f0);
       padding: 8px;
       border-radius: 10px;
       flex-wrap: wrap;
@@ -234,8 +242,8 @@
 
     .item-list { display: flex; flex-direction: column; gap: 10px; }
     .item-card {
-      background: var(--background, #0f172a);
-      border: 1px solid var(--border, #334155);
+      background: var(--background, #ffffff);
+      border: 1px solid var(--border, #e2e8f0);
       border-radius: 12px;
       padding: 12px 14px;
       display: flex;
@@ -257,8 +265,8 @@
       border-radius: 10px;
       flex-shrink: 0;
       object-fit: cover;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: #1e293b;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
     }
     .item-info {
       display: flex;
@@ -276,7 +284,7 @@
     }
     .item-days {
       font-size: 12px;
-      color: var(--muted-foreground, #94a3b8);
+      color: var(--muted-foreground, #64748b);
     }
     .pill {
       display: inline-flex;
@@ -291,30 +299,30 @@
     }
     .pill-short {
       background: rgba(245, 158, 11, 0.16);
-      color: #fbbf24;
+      color: #b45309;
       border: 1px solid rgba(245, 158, 11, 0.35);
     }
     .pill-buy {
       background: rgba(244, 63, 94, 0.16);
-      color: #fb7185;
+      color: #e11d48;
       border: 1px solid rgba(244, 63, 94, 0.35);
     }
     .pill-skip {
       background: rgba(16, 185, 129, 0.16);
-      color: #34d399;
+      color: #047857;
       border: 1px solid rgba(16, 185, 129, 0.35);
     }
     .summary-footer {
       margin-top: 18px;
       padding-top: 16px;
-      border-top: 1px solid var(--border, #334155);
+      border-top: 1px solid var(--border, #e2e8f0);
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
     }
-    .total-price { font-size: 26px; font-weight: 800; color: #38bdf8; }
+    .total-price { font-size: 26px; font-weight: 800; color: #0284c7; }
 
     /* Chat Tab Styles */
     .chat-chips {
@@ -327,13 +335,13 @@
       font-size: 12px;
       padding: 6px 11px;
       border-radius: 99px;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      color: #7dd3fc;
+      background: rgba(2, 132, 199, 0.08);
+      border: 1px solid rgba(2, 132, 199, 0.28);
+      color: #0369a1;
       font-weight: 600;
     }
     .chip-btn:hover {
-      background: rgba(56, 189, 248, 0.22);
+      background: rgba(2, 132, 199, 0.16);
     }
     .chat-messages {
       display: flex;
@@ -357,9 +365,9 @@
     }
     .chat-bubble-bot {
       align-self: flex-start;
-      background: var(--background, #0f172a);
-      border: 1px solid var(--border, #334155);
-      color: var(--foreground, #f8fafc);
+      background: var(--background, #ffffff);
+      border: 1px solid var(--border, #e2e8f0);
+      color: var(--foreground, #0f172a);
       padding: 14px;
       border-radius: 16px 16px 16px 4px;
       width: 100%;
@@ -372,8 +380,8 @@
       line-height: 1.5;
     }
     .chat-shop-box {
-      background: rgba(30, 41, 59, 0.75);
-      border: 1px solid #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 12px;
       padding: 12px;
       display: flex;
@@ -382,7 +390,7 @@
     }
     .chat-skip-note {
       font-size: 12px;
-      color: #34d399;
+      color: #047857;
       background: rgba(16, 185, 129, 0.1);
       border: 1px solid rgba(16, 185, 129, 0.25);
       padding: 8px 10px;
@@ -390,9 +398,9 @@
     }
     .chat-ai-note {
       font-size: 12.5px;
-      color: #cbd5e1;
+      color: #334155;
       background: rgba(2, 132, 199, 0.12);
-      border-left: 3px solid #38bdf8;
+      border-left: 3px solid #0284c7;
       padding: 8px 10px;
       border-radius: 6px;
     }
@@ -1018,9 +1026,9 @@
           keyIn.style.flex = "1";
           keyIn.style.padding = "8px 10px";
           keyIn.style.borderRadius = "8px";
-          keyIn.style.border = "1px solid #38bdf8";
-          keyIn.style.background = "#0f172a";
-          keyIn.style.color = "#f8fafc";
+          keyIn.style.border = "1px solid #0284c7";
+          keyIn.style.background = "#ffffff";
+          keyIn.style.color = "#0f172a";
           keyIn.placeholder = "Google AI Studio 키(AIza...) 입력 시 즉시 재파싱 가능";
           keyIn.value = runtimeGeminiKey;
           keyIn.addEventListener("input", function() {
