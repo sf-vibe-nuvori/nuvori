@@ -486,10 +486,7 @@
       <!-- 📝 영수증 등록 전 확인 및 수정 (Review & Edit Staging Panel) -->
       <div id="receipt-review-container" class="hidden"></div>
 
-      <div class="sub" style="font-weight: 600; margin-bottom: 8px;">샘플 영수증 테스트 (클릭 시 바로 등록되지 않고 확인/수정 창이 열립니다):</div>
-      <div class="btn-group" id="sample-receipt-btns" style="margin-bottom: 16px;"></div>
-
-      <div style="border-top: 1px solid var(--border, #e2e8f0); padding-top: 14px;">
+      <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
         <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [↩️ 되돌리기/삭제] 가능)</div>
         <div id="receipt-db-log" class="item-list"></div>
       </div>
@@ -630,29 +627,6 @@
           }
         ];
       }
-
-      var SAMPLE_RECEIPTS = [
-        {
-          label: "🔍 트레이더조 샘플 검수 (연어·아보카도·우유)",
-          storeName: "Trader Joe's",
-          daysAgo: 0,
-          items: [
-            { id: "salmon", name: "생연어 필렛", price: 12.99, cycleDays: 4 },
-            { id: "avocado", name: "아보카도 (3개입)", price: 4.50, cycleDays: 5 },
-            { id: "milk", name: "우유 (1.89L)", price: 4.20, cycleDays: 8 }
-          ]
-        },
-        {
-          label: "🔍 H-Mart 샘플 검수 (삼겹살·대파·계란)",
-          storeName: "H-Mart",
-          daysAgo: 2,
-          items: [
-            { id: "pork_belly", name: "삼겹살 구이용", price: 14.50, cycleDays: 5 },
-            { id: "green_onion", name: "대파 (1단)", price: 2.20, cycleDays: 7 },
-            { id: "eggs", name: "유기농 계란 (12구)", price: 4.50, cycleDays: 10 }
-          ]
-        }
-      ];
 
       var CHAT_QUICK_PROMPTS = [
         "오늘 장본지 3일 됐는데, 뭐 사야돼?",
@@ -1291,41 +1265,6 @@
         }
       }
 
-      function renderSampleButtons() {
-        var wrap = document.getElementById("sample-receipt-btns");
-        wrap.replaceChildren();
-        for (var i = 0; i < SAMPLE_RECEIPTS.length; i++) {
-          (function(sr) {
-            var btn = el("button", "btn-sm", sr.label);
-            btn.type = "button";
-            btn.addEventListener("click", function() {
-              var d = new Date();
-              d.setDate(d.getDate() - (sr.daysAgo || 0));
-              var yyyy = d.getFullYear();
-              var mm = String(d.getMonth() + 1).padStart(2, "0");
-              var dd = String(d.getDate()).padStart(2, "0");
-              openReceiptReviewEditor({
-                storeName: sr.storeName,
-                purchaseDate: yyyy + "-" + mm + "-" + dd,
-                items: deepClone(sr.items)
-              });
-            });
-            wrap.appendChild(btn);
-          })(SAMPLE_RECEIPTS[i]);
-        }
-
-        var manualBtn = el("button", "btn-sm", "+ 빈 영수증 직접 입력");
-        manualBtn.type = "button";
-        manualBtn.addEventListener("click", function() {
-          openReceiptReviewEditor({
-            storeName: "마트",
-            purchaseDate: getTodayIso(),
-            items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
-          });
-        });
-        wrap.appendChild(manualBtn);
-      }
-
       function renderReceiptDbLog() {
         var logWrap = document.getElementById("receipt-db-log");
         if (!logWrap) return;
@@ -1806,7 +1745,6 @@
 
         renderDayButtons();
         renderReceiptReviewEditor();
-        renderSampleButtons();
         renderReceiptDbLog();
         renderMainView();
       }
@@ -1942,7 +1880,7 @@
             needsApiKeyRetry: isKeyInvalid,
             note: isKeyInvalid
               ? "⚠️ 현재 Netlify 환경변수(GEMINI_API_KEY)가 유효하지 않습니다('API key not valid'). 아래에 유효한 Google AI Studio 키(AIza...)를 넣어 [🔄 사진 다시 파싱]을 누르거나 직접 품목을 입력해 등록하세요."
-              : ("⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력하거나 샘플 영수증으로 테스트해 보세요."),
+              : ("⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력해 등록하세요."),
             items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
           });
         });
