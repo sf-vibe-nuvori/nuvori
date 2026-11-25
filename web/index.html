@@ -587,6 +587,16 @@
         return "default_item";
       }
 
+      // 계약(inventory-state) 필수 필드 보조: boughtDay(상대일)로부터 절대일 역산
+      function isoFromDaysAgo(daysAgo) {
+        var d = new Date();
+        d.setDate(d.getDate() - Math.max(0, daysAgo));
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()).padStart(2, "0");
+        return yyyy + "-" + mm + "-" + dd;
+      }
+
       function getTodayIso() {
         var d = new Date();
         var yyyy = d.getFullYear();
@@ -728,6 +738,7 @@
           price: 4.50,
           cycleDays: 10,
           boughtDay: state.dayOffset - 10,
+          lastPurchaseDate: isoFromDaysAgo(10), // 계약 필수 필드 (boughtDay와 일치하는 절대일)
           manualNeedToBuy: true,
           isManuallyAdded: true,
           checkedForOrder: true
@@ -745,6 +756,17 @@
             if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
               var persistedSubMode = parsed.subMode;
               var validSubModes = ["inventory", "buy", "receipt", "chat"];
+              var persistedDayOffset = typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0;
+              // 계약 마이그레이션 (inventory-state v2): lastPurchaseDate는 필수.
+              // 레거시 데이터에 누락되면 boughtDay 역산으로 보정한다.
+              for (var mi = 0; mi < parsed.items.length; mi++) {
+                var legacy = parsed.items[mi];
+                if (legacy && (!legacy.lastPurchaseDate || typeof legacy.lastPurchaseDate !== "string")) {
+                  legacy.lastPurchaseDate = isoFromDaysAgo(
+                    Math.max(0, persistedDayOffset - (typeof legacy.boughtDay === "number" ? legacy.boughtDay : persistedDayOffset))
+                  );
+                }
+              }
               return {
                 activeTab: "inventory",
                 subMode: validSubModes.indexOf(persistedSubMode) !== -1 ? persistedSubMode : "inventory",
@@ -1008,8 +1030,9 @@
             var interval = Math.abs(computedBoughtDay - found.boughtDay);
             if (n.cycleDays && n.cycleDays > 0) {
               found.cycleDays = n.cycleDays;
-            } else if (interval >= 2 && interval <= 90) {
-              found.cycleDays = Math.max(2, Math.round(0.7 * found.cycleDays + 0.3 * interval));
+            } else {
+              // Empirical Bayes 주기 갱신은 모델 영역의 정규 구현 사용 (가드 포함)
+              found.cycleDays = NuvoriModel.updateCycleDays(found.cycleDays, interval);
             }
             found.boughtDay = computedBoughtDay;
             found.price = n.price;
@@ -1287,6 +1310,7 @@
             price: price,
             cycleDays: 10,
             boughtDay: state.dayOffset - 10,
+            lastPurchaseDate: isoFromDaysAgo(10), // 계약 필수 필드 (boughtDay와 일치하는 절대일)
             manualNeedToBuy: true,
             isManuallyAdded: true,
             checkedForOrder: true
