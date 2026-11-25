@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Nuvori",
+    "slug": "nuvori",
+    "version": "0.1.0",
+    "scheme": "nuvori",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
+    "ios": {
+      "bundleIdentifier": "com.nuvori.mobile",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.nuvori.mobile"
+    }
+  }
+}
