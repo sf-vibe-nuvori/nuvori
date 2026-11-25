@@ -517,6 +517,11 @@
 
   </div>
 
+  <!-- 공유 모듈: model/hsmm-engine.js 와 packages/api-client/api-client.js 가
+       배포 시 web/ 디렉토리로 복사됨 (netlify.toml의 build command 참조) -->
+  <script src="hsmm-engine.js"></script>
+  <script src="api-client.js"></script>
+
   <script>
     (function() {
       "use strict";
@@ -580,16 +585,6 @@
         if (s.indexOf("감자") !== -1 || s.indexOf("고구마") !== -1) return "potato";
         if (s.indexOf("물") !== -1 || s.indexOf("생수") !== -1 || s.indexOf("탄산수") !== -1) return "water";
         return "default_item";
-      }
-
-      function inferCycleDaysByName(name) {
-        var s = String(name || "").toLowerCase();
-        if (s.indexOf("시금치") !== -1 || s.indexOf("상추") !== -1 || s.indexOf("연어") !== -1 || s.indexOf("생선") !== -1 || s.indexOf("딸기") !== -1 || s.indexOf("아보카도") !== -1) return 5;
-        if (s.indexOf("우유") !== -1 || s.indexOf("두부") !== -1 || s.indexOf("삼겹살") !== -1 || s.indexOf("고기") !== -1 || s.indexOf("대파") !== -1 || s.indexOf("빵") !== -1) return 8;
-        if (s.indexOf("계란") !== -1 || s.indexOf("달걀") !== -1 || s.indexOf("사과") !== -1 || s.indexOf("양파") !== -1 || s.indexOf("감자") !== -1) return 12;
-        if (s.indexOf("라면") !== -1 || s.indexOf("파스타") !== -1 || s.indexOf("치즈") !== -1 || s.indexOf("커피") !== -1) return 21;
-        if (s.indexOf("간장") !== -1 || s.indexOf("올리브") !== -1 || s.indexOf("식용유") !== -1 || s.indexOf("소금") !== -1) return 60;
-        return 10;
       }
 
       function getTodayIso() {
@@ -805,46 +800,10 @@
       // ====================================================================
       // 3-State Hierarchical HSMM + Asymmetric Bayesian Decision Engine
       // ====================================================================
-      function computeHsmmBelief(elapsedDays, cycleDays) {
-        var bS2 = 1.0;
-        var bS1 = 0.0;
-        var bS0 = 0.0;
-
-        var halfCycle = Math.max(1.0, cycleDays * 0.45);
-        var remCycle = Math.max(1.0, cycleDays * 0.55);
-
-        for (var d = 1; d <= elapsedDays; d++) {
-          var h21 = Math.min(0.85, Math.max(0.05, (1.0 / halfCycle) * (1.0 + 0.35 * (d / halfCycle))));
-          var h10 = Math.min(0.90, Math.max(0.04, (1.0 / remCycle) * Math.pow(Math.max(0.2, d / cycleDays), 1.6)));
-
-          var nextS2 = bS2 * (1.0 - h21);
-          var nextS1 = bS1 * (1.0 - h10) + bS2 * h21;
-          var nextS0 = bS0 + bS1 * h10;
-
-          var l2 = nextS2 * 0.98;
-          var l1 = nextS1 * 0.98;
-          var l0 = nextS0 * 0.72;
-          var norm = l2 + l1 + l0;
-          if (norm > 0) {
-            bS2 = l2 / norm;
-            bS1 = l1 / norm;
-            bS0 = l0 / norm;
-          }
-        }
-        return { pSurplus: bS2, pNormal: bS1, pDepleted: bS0 };
-      }
-
+      // 3-State HSMM 엔진은 model/hsmm-engine.js (window.NuvoriModel)에서 로드됨.
+      // inferCycleDaysByName / computeHsmmBelief 호출부는 그대로 전역 참조를 사용한다.
       function evaluateItem(item) {
-        var elapsed = Math.max(0, state.dayOffset - item.boughtDay);
-        var belief = computeHsmmBelief(elapsed, Math.max(1, item.cycleDays));
-        var isShort = Boolean(item.manualNeedToBuy) ||
-          (belief.pDepleted >= 0.24) ||
-          (elapsed >= Math.round(item.cycleDays * 0.75));
-        return {
-          elapsed: elapsed,
-          belief: belief,
-          isShort: isShort
-        };
+        return NuvoriModel.evaluateItemForOffset(item, state.dayOffset);
       }
 
       function el(tag, className, text) {
@@ -1930,21 +1889,13 @@
               );
             }
           }
-          fetch("/.netlify/functions/chat-advisor", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: userQuery,
-              dayOffset: state.dayOffset,
-              inventorySummary: invSummary,
-              receiptHistory: rcptHistory,
-              makeableRecipes: makeableRecipes.slice(0, 8),
-              nearMissRecipes: nearMissRecipes.slice(0, 5)
-            })
-          })
-          .then(function(res) {
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.json();
+          NuvoriAPI.chatAdvisor({
+            message: userQuery,
+            dayOffset: state.dayOffset,
+            inventorySummary: invSummary,
+            receiptHistory: rcptHistory,
+            makeableRecipes: makeableRecipes.slice(0, 8),
+            nearMissRecipes: nearMissRecipes.slice(0, 5)
           })
           .then(function(data) {
             if (data && data.reply) {
@@ -2131,23 +2082,11 @@
         statusSub.textContent = "인식 완료 후 바로 등록되지 않고 확인/수정 창이 열립니다";
 
         var existingNames = state.items.map(function(it) { return it.name; });
-        fetch("/.netlify/functions/parse-receipt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageBase64: base64Jpeg,
-            mimeType: "image/jpeg",
-            existingNames: existingNames,
-            todayIso: getTodayIso()
-          })
-        })
-        .then(function(res) {
-          return res.json().then(function(body) {
-            if (!res.ok) {
-              throw new Error((body && (body.detail || body.error)) || ("HTTP " + res.status));
-            }
-            return body;
-          });
+        NuvoriAPI.parseReceipt({
+          imageBase64: base64Jpeg,
+          mimeType: "image/jpeg",
+          existingNames: existingNames,
+          todayIso: getTodayIso()
         })
         .then(function(parsed) {
           statusTitle.textContent = "영수증 사진 찍기 / 파일 올리기";

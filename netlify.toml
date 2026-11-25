@@ -1,3 +1,8 @@
 [build]
-  publish = "."
-  functions = "netlify/functions"
+  # web/ 디렉토리가 사이트 루트가 된다 (index.html, manifest.json)
+  publish = "web"
+  # api/ 디렉토리의 .mjs가 /.netlify/functions/<이름> 으로 배포된다
+  functions = "api"
+  # 공유 모듈을 web/ 으로 복사해서 index.html의 <script src>가 프로덕션에서 동작하게 한다
+  # (복사본은 커밋하지 않는다 — .gitignore 참조)
+  command = "cp model/hsmm-engine.js web/ && cp packages/api-client/api-client.js web/"

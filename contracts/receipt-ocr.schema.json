@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Nuvori Receipt OCR Contract",
+  "description": "api/parse-receipt.mjs (요청) ↔ web/mobile (응답) 계약. 양쪽 모두 이 스키마를 준수해야 한다.",
+  "type": "object",
+  "required": ["isValidGroceryReceipt", "reason", "storeName", "purchaseDate", "items"],
+  "properties": {
+    "isValidGroceryReceipt": {
+      "type": "boolean",
+      "description": "식료품 영수증이 아니면 false (이때 items는 빈 배열)"
+    },
+    "reason": {
+      "type": "string",
+      "description": "isValidGroceryReceipt=false일 때 사용자에게 보여줄 짧은 한국어 사유. 정상이면 빈 문자열"
+    },
+    "storeName": { "type": "string", "description": "영수증에 인쇄된 상점명 (예: Trader Joe's, H-Mart)" },
+    "purchaseDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "구매일자 YYYY-MM-DD" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "price", "cycleDays"],
+        "properties": {
+          "name": { "type": "string", "description": "품목명 (한국어로 읽기 쉽게 정규화)" },
+          "price": { "type": "number", "minimum": 0, "description": "최종 금액 (USD, 원화는 1350으로 나눈 환산값)" },
+          "quantity": { "type": "integer", "minimum": 1, "default": 1 },
+          "cycleDays": { "type": "integer", "minimum": 1, "description": "일반 가정 소비주기 일수" }
+        }
+      }
+    }
+  },
+  "x-request": {
+    "description": "POST /.netlify/functions/parse-receipt 요청 바디",
+    "type": "object",
+    "required": ["imageBase64"],
+    "properties": {
+      "imageBase64": { "type": "string", "description": "JPEG 등 base64 인코딩 영수증 이미지" },
+      "mimeType": { "type": "string", "default": "image/jpeg" },
+      "existingNames": { "type": "array", "items": { "type": "string" }, "description": "기존 인벤토리 품목명 (환각 이름 통일용 힌트)" },
+      "todayIso": { "type": "string", "description": "식별 불가 시 기본 구매일자" }
+    },
+    "note": "API 키는 절대 요청에 포함하지 않는다 (서버 process.env 전용)"
+  }
+}

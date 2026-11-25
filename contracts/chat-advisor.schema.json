@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Nuvori Chat Advisor Contract",
+  "description": "api/chat-advisor.mjs (요청/응답) ↔ web/mobile 계약. 양쪽 모두 이 스키마를 준수해야 한다.",
+  "type": "object",
+  "required": ["reply"],
+  "properties": {
+    "reply": { "type": "string", "description": "2~3문장의 자연스럽고 친절한 한국어 답변" }
+  },
+  "x-request": {
+    "description": "POST /.netlify/functions/chat-advisor 요청 바디",
+    "type": "object",
+    "required": ["message"],
+    "properties": {
+      "message": { "type": "string", "maxLength": 300, "description": "사용자 질문" },
+      "dayOffset": { "type": "integer", "default": 0, "description": "장본 후 경과일" },
+      "inventorySummary": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "elapsed": { "type": "integer" },
+            "cycleDays": { "type": "integer" },
+            "pDepleted": { "type": "integer", "description": "고갈확률 % (0~100)" },
+            "isShort": { "type": "boolean" }
+          }
+        }
+      },
+      "receiptHistory": {
+        "type": "array",
+        "maxItems": 5,
+        "description": "최근 영수증 요약 (반복 구매 패턴 분석용)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "storeName": { "type": "string" },
+            "purchaseDate": { "type": "string" },
+            "items": {
+              "type": "array",
+              "maxItems": 15,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "price": { "type": "number" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "makeableRecipes": { "type": "array", "items": { "type": "string" }, "maxItems": 8, "description": "지금 만들 수 있는 요리 이름" },
+      "nearMissRecipes": { "type": "array", "items": { "type": "string" }, "maxItems": 5, "description": "재료 1~2개 부족 요리 (부족 재료 포함 문자열)" }
+    }
+  }
+}
