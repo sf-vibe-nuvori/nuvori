@@ -63,13 +63,25 @@
     };
   }
 
+  // 순수 갱신 함수: 반복 구매 간격 관측 시 소비주기를 Empirical Bayes식 블렌드로 갱신.
+  // 간격이 유효 구간(2~90일) 밖이면 관측을 무시하고 prev를 그대로 반환한다.
+  function updateCycleDays(prevCycleDays, observedIntervalDays) {
+    var prev = Math.max(2, prevCycleDays);
+    if (!(observedIntervalDays >= 2 && observedIntervalDays <= 90)) {
+      return prev;
+    }
+    return Math.max(2, 0.7 * prev + 0.3 * observedIntervalDays);
+  }
+
   // web/index.html 인라인 스크립트와 packages/api-client가 함께 쓸 수 있도록 전역 노출
   // (기존 호출부의 직접 참조(computeHsmmBelief/inferCycleDaysByName) 호환용 bare 전역 + 네임스페이스)
   window.NuvoriModel = {
     computeHsmmBelief: computeHsmmBelief,
     inferCycleDaysByName: inferCycleDaysByName,
-    evaluateItemForOffset: evaluateItemForOffset
+    evaluateItemForOffset: evaluateItemForOffset,
+    updateCycleDays: updateCycleDays
   };
   window.computeHsmmBelief = computeHsmmBelief;
   window.inferCycleDaysByName = inferCycleDaysByName;
+  window.updateCycleDays = updateCycleDays;
 })();
