@@ -416,22 +416,22 @@
       <div class="btn-group" id="day-buttons"></div>
     </div>
 
-    <!-- 3개 메인 탭: | 🥬 인벤토리·쇼핑 | 💬 장보기 챗 | 📸 사진 올리기 | -->
+    <!-- 2개 메인 섹션: | 🥬 인벤토리 | 🍳 레시피 | -->
     <div class="main-tabs">
-      <button id="tab-main-btn" type="button" class="tab-btn active">🥬 인벤토리·쇼핑</button>
-      <button id="tab-chat-btn" type="button" class="tab-btn">💬 장보기 챗</button>
-      <button id="tab-upload-btn" type="button" class="tab-btn">📸 사진 올리기</button>
+      <button id="tab-inventory-btn" type="button" class="tab-btn active">🥬 인벤토리</button>
       <button id="tab-recipe-btn" type="button" class="tab-btn">🍳 레시피</button>
     </div>
 
     <div id="toast" class="toast"></div>
 
-    <!-- TAB 1: 인벤토리 및 쇼핑 리스트 -->
-    <div id="view-main" class="card">
+    <!-- SECTION 1: 🥬 인벤토리 전용 (인벤토리 · 쇼핑 리스트 · 영수증 · 장보기 챗) -->
+    <div id="view-inventory" class="card">
       <div class="mode-toggle-wrap">
         <div class="seg-toggle">
           <button id="toggle-inventory" type="button" class="seg-btn active">🥬 인벤토리</button>
-          <button id="toggle-buy" type="button" class="seg-btn">🛒 쇼핑 리스트</button>
+          <button id="toggle-buy" type="button" class="seg-btn">🛒 쇼핑</button>
+          <button id="toggle-receipt" type="button" class="seg-btn">📸 영수증</button>
+          <button id="toggle-chat-inv" type="button" class="seg-btn">💬 챗</button>
         </div>
         <span id="mode-summary-badge" class="pill pill-skip"></span>
       </div>
@@ -460,10 +460,50 @@
           </div>
         </div>
       </div>
+
+      <!-- 서브뷰 C: 영수증 (사진 올리기 + 등록 전 검수/수정 + 저장 내역) -->
+      <div id="subview-receipt" class="hidden">
+        <label class="upload-box">
+          <span style="font-size: 34px;">📷</span>
+          <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
+          <span id="upload-status-sub" class="sub">사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다</span>
+          <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
+        </label>
+
+        <!-- 📝 영수증 등록 전 확인 및 수정 (Review & Edit Staging Panel) -->
+        <div id="receipt-review-container" class="hidden"></div>
+
+        <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
+          <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [🗑 삭제] 가능)</div>
+          <div id="receipt-db-log" class="item-list"></div>
+        </div>
+      </div>
+
+      <!-- 서브뷰 D: 장보기 챗 슬롯 (공유 chat-panel 이 도킹됨) -->
+      <div id="subview-chat-inv" class="hidden"></div>
     </div>
 
-    <!-- TAB 2: 💬 장보기 챗 (자연어 시점·소진 질의 -> 즉시 쇼핑리스트 카드 표시) -->
-    <div id="view-chat" class="card hidden">
+    <!-- SECTION 2: 🍳 레시피 전용 (재료별 요리 + 요리 질문 챗) -->
+    <div id="view-recipe" class="card hidden">
+      <div class="mode-toggle-wrap">
+        <div class="seg-toggle">
+          <button id="toggle-recipe-list" type="button" class="seg-btn active">🍳 요리</button>
+          <button id="toggle-chat-recipe" type="button" class="seg-btn">💬 질문</button>
+        </div>
+      </div>
+
+      <!-- 서브뷰: 재료 기반 요리 목록 -->
+      <div id="subview-recipe-list">
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🍳 인벤토리 재료로 만들 수 있는 요리</div>
+        <div id="recipe-list" class="item-list"></div>
+      </div>
+
+      <!-- 서브뷰: 요리 챗 슬롯 (공유 chat-panel 이 도킹됨) -->
+      <div id="subview-chat-recipe" class="hidden"></div>
+    </div>
+
+    <!-- 💬 공유 챗 패널: 활성 섹션의 챗 슬롯으로 이동 도킹됨 (인벤토리 챗 = 장보기, 레시피 챗 = 요리 추천) -->
+    <div id="chat-panel">
       <div class="sub" style="font-weight: 700; margin-bottom: 8px;">💡 원클릭 추천 질문 (누르면 바로 쇼핑 리스트가 나옵니다):</div>
       <div id="chat-quick-chips" class="chat-chips"></div>
 
@@ -473,30 +513,6 @@
         <input id="input-chat-query" type="text" placeholder="예: 오늘 장본지 3일 됐는데, 뭐 사야돼?" />
         <button id="btn-send-chat" type="button" class="btn-primary">전송</button>
       </div>
-    </div>
-
-    <!-- TAB 3: 사진 올리기 + 영수증 등록 전 검수/수정 + 적재된 영수증 Revert/수정 -->
-    <div id="view-upload" class="card hidden">
-      <label class="upload-box">
-        <span style="font-size: 34px;">📷</span>
-        <span id="upload-status-title" style="font-size: 15px; font-weight: 700;">영수증 사진 찍기 / 파일 올리기</span>
-        <span id="upload-status-sub" class="sub">사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다</span>
-        <input id="file-upload" type="file" accept="image/*" capture="environment" style="display: none;" />
-      </label>
-
-      <!-- 📝 영수증 등록 전 확인 및 수정 (Review & Edit Staging Panel) -->
-      <div id="receipt-review-container" class="hidden"></div>
-
-      <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
-        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [🗑 삭제] 가능)</div>
-        <div id="receipt-db-log" class="item-list"></div>
-      </div>
-    </div>
-
-    <!-- 🍳 레시피 탭: 인벤토리 재료 기반 요리 추천 -->
-    <div id="view-recipe" class="card hidden">
-      <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🍳 인벤토리 재료로 만들 수 있는 요리</div>
-      <div id="recipe-list" class="item-list"></div>
     </div>
 
   </div>
@@ -732,9 +748,12 @@
           if (raw) {
             var parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+              var persistedSubMode = parsed.subMode;
+              var validSubModes = ["inventory", "buy", "receipt", "chat"];
               return {
-                activeTab: "main",
-                subMode: parsed.subMode || "inventory",
+                activeTab: "inventory",
+                subMode: validSubModes.indexOf(persistedSubMode) !== -1 ? persistedSubMode : "inventory",
+                recipeMode: parsed.recipeMode === "chat" ? "chat" : "list",
                 dayOffset: typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0,
                 items: parsed.items,
                 receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts(),
@@ -744,8 +763,9 @@
           }
         } catch (e) {}
         return {
-          activeTab: "main",       // "main" | "chat" | "upload"
-          subMode: "inventory",    // "inventory" | "buy"
+          activeTab: "inventory",  // "inventory" | "recipe"
+          subMode: "inventory",    // "inventory" | "buy" | "receipt" | "chat"
+          recipeMode: "list",      // "list" | "chat"
           dayOffset: 0,
           items: getDefaultItems(),
           receipts: getDefaultReceipts(),
@@ -758,6 +778,7 @@
           if (window.localStorage) {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
               subMode: state.subMode,
+              recipeMode: state.recipeMode,
               dayOffset: state.dayOffset,
               items: state.items,
               receipts: state.receipts
@@ -897,7 +918,8 @@
           needsApiKeyRetry: Boolean(draftReceipt.needsApiKeyRetry),
           items: cleaned
         };
-        state.activeTab = "upload";
+        state.activeTab = "inventory";
+        state.subMode = "receipt";
         renderAll();
       }
 
@@ -1069,7 +1091,7 @@
         });
 
         state.pendingReceipt = null;
-        state.activeTab = "main";
+        state.activeTab = "inventory";
         state.subMode = "inventory";
         showToast(
           wasEditing
@@ -1314,7 +1336,7 @@
 
         nameInput.value = "";
         priceInput.value = "";
-        state.activeTab = "main";
+        state.activeTab = "inventory";
         state.subMode = "buy";
         showToast("🛒 '" + name + "' ($" + price.toFixed(2) + ") 쇼핑 리스트에 추가됨!");
         renderAll();
@@ -1495,6 +1517,18 @@
       }
 
       function renderRecipeView() {
+        var btnList = document.getElementById("toggle-recipe-list");
+        var btnChat = document.getElementById("toggle-chat-recipe");
+        var subList = document.getElementById("subview-recipe-list");
+        var subChat = document.getElementById("subview-chat-recipe");
+        if (btnList && btnChat && subList && subChat) {
+          if (state.recipeMode !== "chat") state.recipeMode = "list";
+          btnList.className = state.recipeMode === "list" ? "seg-btn active" : "seg-btn";
+          btnChat.className = state.recipeMode === "chat" ? "seg-btn active" : "seg-btn";
+          subList.classList.toggle("hidden", state.recipeMode !== "list");
+          subChat.classList.toggle("hidden", state.recipeMode !== "chat");
+        }
+
         var wrap = document.getElementById("recipe-list");
         if (!wrap) return;
         wrap.replaceChildren();
@@ -1543,7 +1577,7 @@
           showToast("주문할 품목이 없습니다.");
           return;
         }
-        state.activeTab = "main";
+        state.activeTab = "inventory";
         state.subMode = "inventory";
         showToast("🎉 주문 완료! " + orderedCount + "개 품목($" + totalPaid.toFixed(2) + ")이 '오늘 구매'로 채워졌습니다.");
         renderAll();
@@ -1591,24 +1625,33 @@
 
         var btnInv = document.getElementById("toggle-inventory");
         var btnBuy = document.getElementById("toggle-buy");
+        var btnRcpt = document.getElementById("toggle-receipt");
+        var btnChatInv = document.getElementById("toggle-chat-inv");
         btnInv.textContent = "🥬 인벤토리 (" + state.items.length + ")";
-        btnBuy.textContent = "🛒 쇼핑 리스트 (" + shortCount + ")";
+        btnBuy.textContent = "🛒 쇼핑 (" + shortCount + ")";
+        btnInv.className = state.subMode === "inventory" ? "seg-btn active" : "seg-btn";
+        btnBuy.className = state.subMode === "buy" ? "seg-btn active" : "seg-btn";
+        btnRcpt.className = state.subMode === "receipt" ? "seg-btn active" : "seg-btn";
+        btnChatInv.className = state.subMode === "chat" ? "seg-btn active" : "seg-btn";
+
+        document.getElementById("subview-inventory").classList.toggle("hidden", state.subMode !== "inventory");
+        document.getElementById("subview-buy").classList.toggle("hidden", state.subMode !== "buy");
+        document.getElementById("subview-receipt").classList.toggle("hidden", state.subMode !== "receipt");
+        document.getElementById("subview-chat-inv").classList.toggle("hidden", state.subMode !== "chat");
 
         var badge = document.getElementById("mode-summary-badge");
         if (state.subMode === "inventory") {
-          btnInv.className = "seg-btn active";
-          btnBuy.className = "seg-btn";
-          document.getElementById("subview-inventory").classList.remove("hidden");
-          document.getElementById("subview-buy").classList.add("hidden");
           badge.className = "pill pill-short";
           badge.textContent = "⚠️ 부족 " + shortCount + "개 · ✅ 충분 " + skipCount + "개";
-        } else {
-          btnInv.className = "seg-btn";
-          btnBuy.className = "seg-btn active";
-          document.getElementById("subview-inventory").classList.add("hidden");
-          document.getElementById("subview-buy").classList.remove("hidden");
+        } else if (state.subMode === "buy") {
           badge.className = "pill pill-skip";
           badge.textContent = "✅ 안 사도 되는 " + skipCount + "개로 $" + savedMoney.toFixed(2) + " 절약";
+        } else if (state.subMode === "receipt") {
+          badge.className = "pill pill-skip";
+          badge.textContent = "📄 영수증 " + (Array.isArray(state.receipts) ? state.receipts.length : 0) + "건";
+        } else {
+          badge.className = "pill pill-skip";
+          badge.textContent = "💬 AI 장보기 어드바이저";
         }
 
         var orderTotal = 0.0;
@@ -1816,7 +1859,7 @@
         var btnGoBuyTab = el("button", "btn-sm", "🛒 쇼핑 리스트 탭 열기");
         btnGoBuyTab.type = "button";
         btnGoBuyTab.addEventListener("click", function() {
-          state.activeTab = "main";
+          state.activeTab = "inventory";
           state.subMode = "buy";
           renderAll();
         });
@@ -1967,25 +2010,27 @@
       }
 
       function renderAll() {
-        var tabMainBtn = document.getElementById("tab-main-btn");
-        var tabChatBtn = document.getElementById("tab-chat-btn");
-        var tabUploadBtn = document.getElementById("tab-upload-btn");
-        var tabRecipeBtn = document.getElementById("tab-recipe-btn");
+        if (state.activeTab !== "recipe") state.activeTab = "inventory";
 
-        var viewMain = document.getElementById("view-main");
-        var viewChat = document.getElementById("view-chat");
-        var viewUpload = document.getElementById("view-upload");
+        var tabInvBtn = document.getElementById("tab-inventory-btn");
+        var tabRcpBtn = document.getElementById("tab-recipe-btn");
+        var viewInventory = document.getElementById("view-inventory");
         var viewRecipe = document.getElementById("view-recipe");
 
-        tabMainBtn.className = state.activeTab === "main" ? "tab-btn active" : "tab-btn";
-        tabChatBtn.className = state.activeTab === "chat" ? "tab-btn active" : "tab-btn";
-        tabUploadBtn.className = state.activeTab === "upload" ? "tab-btn active" : "tab-btn";
-        tabRecipeBtn.className = state.activeTab === "recipe" ? "tab-btn active" : "tab-btn";
-
-        viewMain.classList.toggle("hidden", state.activeTab !== "main");
-        viewChat.classList.toggle("hidden", state.activeTab !== "chat");
-        viewUpload.classList.toggle("hidden", state.activeTab !== "upload");
+        tabInvBtn.className = state.activeTab === "inventory" ? "tab-btn active" : "tab-btn";
+        tabRcpBtn.className = state.activeTab === "recipe" ? "tab-btn active" : "tab-btn";
+        viewInventory.classList.toggle("hidden", state.activeTab !== "inventory");
         viewRecipe.classList.toggle("hidden", state.activeTab !== "recipe");
+
+        // Dock the shared chat panel into the active section's chat slot
+        // (appendChild on a different parent moves the node — one chat, two doors)
+        var chatPanel = document.getElementById("chat-panel");
+        var chatSlot = state.activeTab === "recipe"
+          ? document.getElementById("subview-chat-recipe")
+          : document.getElementById("subview-chat-inv");
+        if (chatPanel && chatSlot && chatPanel.parentNode !== chatSlot) {
+          chatSlot.appendChild(chatPanel);
+        }
 
         renderDayButtons();
         renderReceiptReviewEditor();
@@ -1994,19 +2039,9 @@
         renderRecipeView();
       }
 
-      // Wire Tabs & Toggle
-      document.getElementById("tab-main-btn").addEventListener("click", function() {
-        state.activeTab = "main";
-        renderAll();
-      });
-
-      document.getElementById("tab-chat-btn").addEventListener("click", function() {
-        state.activeTab = "chat";
-        renderAll();
-      });
-
-      document.getElementById("tab-upload-btn").addEventListener("click", function() {
-        state.activeTab = "upload";
+      // Wire Tabs & Toggles
+      document.getElementById("tab-inventory-btn").addEventListener("click", function() {
+        state.activeTab = "inventory";
         renderAll();
       });
 
@@ -2017,12 +2052,32 @@
 
       document.getElementById("toggle-inventory").addEventListener("click", function() {
         state.subMode = "inventory";
-        renderMainView();
+        renderAll();
       });
 
       document.getElementById("toggle-buy").addEventListener("click", function() {
         state.subMode = "buy";
-        renderMainView();
+        renderAll();
+      });
+
+      document.getElementById("toggle-receipt").addEventListener("click", function() {
+        state.subMode = "receipt";
+        renderAll();
+      });
+
+      document.getElementById("toggle-chat-inv").addEventListener("click", function() {
+        state.subMode = "chat";
+        renderAll();
+      });
+
+      document.getElementById("toggle-recipe-list").addEventListener("click", function() {
+        state.recipeMode = "list";
+        renderAll();
+      });
+
+      document.getElementById("toggle-chat-recipe").addEventListener("click", function() {
+        state.recipeMode = "chat";
+        renderAll();
       });
 
       document.getElementById("btn-send-chat").addEventListener("click", function() {
