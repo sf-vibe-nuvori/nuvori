@@ -678,7 +678,6 @@
       }
 
       var state = loadInitialState();
-      var runtimeGeminiKey = "";
       var lastUploadedBase64 = "";
 
       function getThumb(item) {
@@ -895,6 +894,24 @@
           return;
         }
 
+        // Duplicate guard: same store + same purchase date already in DB (skip when editing that receipt)
+        var isEditingExisting = Boolean(pending.editingReceiptId);
+        if (!isEditingExisting && Array.isArray(state.receipts)) {
+          for (var d = 0; d < state.receipts.length; d++) {
+            var existing = state.receipts[d];
+            if (
+              existing &&
+              String(existing.storeName) === storeName &&
+              String(existing.purchaseDate) === purchaseDate
+            ) {
+              showToast(
+                "⚠️ [" + storeName + " · " + purchaseDate + "] 영수증이 이미 등록되어 있습니다. 저장된 내역에서 '✏️ 수정'을 이용해 주세요."
+              );
+              return;
+            }
+          }
+        }
+
         // If editing an existing receipt, revert its previous effect first
         var wasEditing = Boolean(pending.editingReceiptId);
         if (wasEditing) {
@@ -1021,28 +1038,10 @@
         if (pending.needsApiKeyRetry && lastUploadedBase64) {
           var keyRetryRow = el("div", "input-row");
           keyRetryRow.style.marginBottom = "4px";
-          var keyIn = document.createElement("input");
-          keyIn.type = "password";
-          keyIn.style.flex = "1";
-          keyIn.style.padding = "8px 10px";
-          keyIn.style.borderRadius = "8px";
-          keyIn.style.border = "1px solid #0284c7";
-          keyIn.style.background = "#ffffff";
-          keyIn.style.color = "#0f172a";
-          keyIn.placeholder = "Google AI Studio 키(AIza...) 입력 시 즉시 재파싱 가능";
-          keyIn.value = runtimeGeminiKey;
-          keyIn.addEventListener("input", function() {
-            runtimeGeminiKey = keyIn.value.trim();
-          });
-          keyRetryRow.appendChild(keyIn);
-
           var retryBtn = el("button", "btn-primary btn-sm", "🔄 사진 다시 파싱");
           retryBtn.type = "button";
+          retryBtn.style.flex = "1";
           retryBtn.addEventListener("click", function() {
-            if (!runtimeGeminiKey) {
-              showToast("유효한 Gemini API 키(AIza...)를 입력해 주세요.");
-              return;
-            }
             requestReceiptOcr(lastUploadedBase64);
           });
           keyRetryRow.appendChild(retryBtn);
@@ -1265,6 +1264,8 @@
         }
       }
 
+      var receiptLogExpanded = false;
+
       function renderReceiptDbLog() {
         var logWrap = document.getElementById("receipt-db-log");
         if (!logWrap) return;
@@ -1274,7 +1275,20 @@
           logWrap.appendChild(el("div", "sub", "등록된 영수증 내역이 없습니다."));
           return;
         }
-        for (var i = 0; i < Math.min(8, list.length); i++) {
+
+        // Cumulative summary line
+        var totalCount = list.length;
+        var totalSpent = list.reduce(function(acc, r) {
+          return acc + (r.items || []).reduce(function(a, it) {
+            return a + Number(it.price || 0);
+          }, 0);
+        }, 0);
+        logWrap.appendChild(el("div", "sub", "📄 총 " + totalCount + "건 · 총 지출 $" + totalSpent.toFixed(2)));
+
+        var LIST_PAGE_SIZE = 10;
+        var visibleCount = receiptLogExpanded ? list.length : Math.min(LIST_PAGE_SIZE, list.length);
+
+        for (var i = 0; i < visibleCount; i++) {
           (function(r) {
             var card = el("div", "item-card");
             var info = el("div", "item-info");
@@ -1284,7 +1298,13 @@
             var sum = (r.items || []).reduce(function(acc, it) {
               return acc + Number(it.price || 0);
             }, 0);
-            info.appendChild(el("div", "item-name", "🏪 " + r.storeName + "  ·  📅 " + r.purchaseDate + "  ($" + sum.toFixed(2) + ")"));
+            info.appendChild(
+              el(
+                "div",
+                "item-name",
+                "🏪 " + r.storeName + "  ·  📅 " + r.purchaseDate + "  ·  " + (r.items || []).length + "개 품목 ($" + sum.toFixed(2) + ")"
+              )
+            );
             info.appendChild(el("div", "item-days", itemSummary));
             card.appendChild(info);
 
@@ -1301,16 +1321,39 @@
             });
             actions.appendChild(editBtn);
 
-            var revertBtn = el("button", "btn-danger btn-sm", "↩️ 되돌리기(삭제)");
-            revertBtn.type = "button";
-            revertBtn.addEventListener("click", function() {
-              revertReceiptFromDB(r.id, false);
+            // 2-step delete: first tap arms, second tap (within 3s) deletes via revert logic
+            var deleteBtn = el("button", "btn-danger btn-sm", "🗑 삭제");
+            deleteBtn.type = "button";
+            var deleteArmed = false;
+            var disarmTimer = null;
+            deleteBtn.addEventListener("click", function() {
+              if (!deleteArmed) {
+                deleteArmed = true;
+                deleteBtn.textContent = "🗑 다시 눌러 삭제";
+                disarmTimer = setTimeout(function() {
+                  deleteArmed = false;
+                  deleteBtn.textContent = "🗑 삭제";
+                }, 3000);
+              } else {
+                if (disarmTimer) clearTimeout(disarmTimer);
+                revertReceiptFromDB(r.id, false);
+              }
             });
-            actions.appendChild(revertBtn);
+            actions.appendChild(deleteBtn);
 
             card.appendChild(actions);
             logWrap.appendChild(card);
           })(list[i]);
+        }
+
+        if (list.length > LIST_PAGE_SIZE) {
+          var toggleBtn = el("button", "btn-sm", receiptLogExpanded ? "▲ 접기" : "▼ 더보기 (" + (list.length - LIST_PAGE_SIZE) + "건)");
+          toggleBtn.type = "button";
+          toggleBtn.addEventListener("click", function() {
+            receiptLogExpanded = !receiptLogExpanded;
+            renderReceiptDbLog();
+          });
+          logWrap.appendChild(toggleBtn);
         }
       }
 
@@ -1650,13 +1693,25 @@
               isShort: ev.isShort
             };
           });
+          var rcptHistory = (Array.isArray(state.receipts) ? state.receipts : [])
+            .slice(0, 5)
+            .map(function(r) {
+              return {
+                storeName: r.storeName,
+                purchaseDate: r.purchaseDate,
+                items: (r.items || []).slice(0, 15).map(function(it) {
+                  return { name: it.name, price: Number(it.price || 0) };
+                })
+              };
+            });
           fetch("/.netlify/functions/chat-advisor", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message: userQuery,
               dayOffset: state.dayOffset,
-              inventorySummary: invSummary
+              inventorySummary: invSummary,
+              receiptHistory: rcptHistory
             })
           })
           .then(function(res) {
@@ -1833,8 +1888,7 @@
             imageBase64: base64Jpeg,
             mimeType: "image/jpeg",
             existingNames: existingNames,
-            todayIso: getTodayIso(),
-            clientApiKey: runtimeGeminiKey || ""
+            todayIso: getTodayIso()
           })
         })
         .then(function(res) {
@@ -1873,14 +1927,14 @@
           statusSub.textContent = "사진을 올리면 아래에서 품목을 확인·수정한 뒤 등록할 수 있습니다";
           var errMsg = (errObj && errObj.message) ? errObj.message : "서버 연결 실패";
           var isKeyInvalid = errMsg.indexOf("API key not valid") !== -1 || errMsg.indexOf("GEMINI_API_KEY") !== -1;
-          showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정하거나 키를 재입력할 수 있습니다.");
+          showToast("⚠️ 영수증 자동 파싱 오류(" + errMsg + ") — 아래 확인 창에서 직접 수정하거나 다시 파싱할 수 있습니다.");
           openReceiptReviewEditor({
             storeName: "마트",
             purchaseDate: getTodayIso(),
             needsApiKeyRetry: isKeyInvalid,
             note: isKeyInvalid
-              ? "⚠️ 현재 Netlify 환경변수(GEMINI_API_KEY)가 유효하지 않습니다('API key not valid'). 아래에 유효한 Google AI Studio 키(AIza...)를 넣어 [🔄 사진 다시 파싱]을 누르거나 직접 품목을 입력해 등록하세요."
-              : ("⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. 품목을 직접 입력해 등록하세요."),
+              ? "⚠️ 현재 Netlify 환경변수(GEMINI_API_KEY)가 유효하지 않습니다('API key not valid'). Netlify 환경변수에 유효한 키를 설정한 뒤 [🔄 사진 다시 파싱]을 누르거나, 품목을 직접 입력해 등록하세요."
+              : ("⚠️ 영수증 자동 파싱 중 오류(" + errMsg + ")가 발생했습니다. [🔄 사진 다시 파싱]을 누르거나 품목을 직접 입력해 등록하세요."),
             items: [{ id: "", name: "", price: 4.50, cycleDays: 7 }]
           });
         });
