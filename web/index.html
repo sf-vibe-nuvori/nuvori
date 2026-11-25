@@ -171,12 +171,13 @@
       margin-bottom: 14px;
     }
     input[type="text"], input[type="number"], input[type="date"] {
-      padding: 9px 11px;
+      padding: 8px 10px;
       border-radius: 10px;
       border: 1px solid var(--border, #e2e8f0);
       background: var(--background, #ffffff);
       color: var(--foreground, #0f172a);
-      font-size: 15px;
+      /* iOS 자동 줌인 방지: 모든 input은 16px 이상 유지 (web/CLAUDE.md 규칙) */
+      font-size: 16px;
       font-family: inherit;
     }
     input[type="text"] { flex: 1; min-width: 0; }
@@ -226,17 +227,17 @@
     }
     .review-item-row input[type="text"] {
       flex: 1 1 130px;
-      font-size: 14px;
+      font-size: 16px;
       padding: 7px 9px;
     }
     .review-item-row .price-input {
-      width: 78px;
-      font-size: 14px;
+      width: 88px;
+      font-size: 16px;
       padding: 7px 8px;
     }
     .review-item-row .cycle-input {
-      width: 68px;
-      font-size: 14px;
+      width: 78px;
+      font-size: 16px;
       padding: 7px 8px;
     }
 
@@ -343,6 +344,12 @@
     .chip-btn:hover {
       background: rgba(2, 132, 199, 0.16);
     }
+    .chip-btn.chip-active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0369a1;
+      font-weight: 700;
+    }
     .chat-messages {
       display: flex;
       flex-direction: column;
@@ -433,7 +440,7 @@
           <button id="toggle-receipt" type="button" class="seg-btn">📸 영수증</button>
           <button id="toggle-chat-inv" type="button" class="seg-btn">💬 챗</button>
         </div>
-        <span id="mode-summary-badge" class="pill pill-skip"></span>
+        <span id="mode-summary-badge" class="sub"></span>
       </div>
 
       <!-- 서브뷰 A: 인벤토리 리스트 -->
@@ -790,15 +797,118 @@
         };
       }
 
+      // ====================================================================
+      // 저장 전 상태 정규화 — contracts/inventory-state.schema.json 의
+      // 필수 필드(id, name, price, cycleDays, boughtDay, lastPurchaseDate)가
+      // 누락·파손된 항목은 보정하고, 복구 불가능한 항목은 저장에서 제외한다.
+      // 레거시 오염 데이터가 localStorage 로 다시 쓰이는 것을 막는 게 목적.
+      // ====================================================================
+      var ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+      function normalizeItemForSave(item, index) {
+        if (!item || typeof item !== "object") return null;
+        var name = typeof item.name === "string" ? item.name.trim() : "";
+        if (!name) return null; // 품목명 없음 → 복구 불가, 제외
+
+        var price = Number(item.price);
+        var cycleDays = Number(item.cycleDays);
+        var boughtDay = Number(item.boughtDay);
+        var lastPurchaseDate = (
+          typeof item.lastPurchaseDate === "string" && ISO_DATE_RE.test(item.lastPurchaseDate)
+        ) ? item.lastPurchaseDate : null;
+
+        // 상대일(boughtDay)과 절대일(lastPurchaseDate) 중 하나만 살아 있어도 나머지를 역산 보정
+        if (!lastPurchaseDate && !isNaN(boughtDay)) {
+          lastPurchaseDate = isoFromDaysAgo(Math.max(0, state.dayOffset - boughtDay));
+        }
+        if (isNaN(boughtDay) && lastPurchaseDate) {
+          boughtDay = state.dayOffset - daysBetweenIso(lastPurchaseDate, getTodayIso());
+        }
+        if (!lastPurchaseDate) lastPurchaseDate = getTodayIso();
+        if (isNaN(boughtDay)) boughtDay = state.dayOffset;
+
+        return {
+          id: (typeof item.id === "string" && item.id) ? item.id : ("item_" + Date.now() + "_" + index),
+          thumbKey: (typeof item.thumbKey === "string" && item.thumbKey) ? item.thumbKey : inferThumbKey(name),
+          name: name,
+          price: (!isNaN(price) && price >= 0) ? price : 0,
+          lastStore: (typeof item.lastStore === "string" && item.lastStore) ? item.lastStore : "",
+          lastPurchaseDate: lastPurchaseDate,
+          cycleDays: (!isNaN(cycleDays) && cycleDays >= 1) ? Math.round(cycleDays) : inferCycleDaysByName(name),
+          boughtDay: Math.round(boughtDay),
+          manualNeedToBuy: Boolean(item.manualNeedToBuy),
+          isManuallyAdded: Boolean(item.isManuallyAdded),
+          checkedForOrder: item.checkedForOrder !== false
+        };
+      }
+
+      function normalizeReceiptForSave(receipt, index) {
+        if (!receipt || typeof receipt !== "object" || !Array.isArray(receipt.items)) return null;
+        var storeName = typeof receipt.storeName === "string" ? receipt.storeName.trim() : "";
+        var purchaseDate = (
+          typeof receipt.purchaseDate === "string" && ISO_DATE_RE.test(receipt.purchaseDate)
+        ) ? receipt.purchaseDate : null;
+        if (!storeName || !purchaseDate) return null;
+
+        var cleanedItems = [];
+        for (var i = 0; i < receipt.items.length; i++) {
+          var it = receipt.items[i];
+          if (!it || typeof it !== "object" || typeof it.name !== "string" || !it.name.trim()) continue;
+          var p = Number(it.price);
+          var c = Number(it.cycleDays);
+          cleanedItems.push({
+            id: (typeof it.id === "string") ? it.id : "",
+            name: it.name.trim(),
+            price: (!isNaN(p) && p >= 0) ? p : 0,
+            cycleDays: (!isNaN(c) && c >= 1) ? Math.round(c) : inferCycleDaysByName(it.name)
+          });
+        }
+        if (cleanedItems.length === 0) return null;
+
+        // prevItemMap(되돌리기 스냅샷)도 동일 스키마로 정규화 — 파손 엔트리는 제외
+        var prevMap = {};
+        if (receipt.prevItemMap && typeof receipt.prevItemMap === "object") {
+          for (var key in receipt.prevItemMap) {
+            var normPrev = normalizeItemForSave(receipt.prevItemMap[key], index);
+            if (normPrev) prevMap[key] = normPrev;
+          }
+        }
+
+        return {
+          id: (typeof receipt.id === "string" && receipt.id) ? receipt.id : ("rcpt_" + Date.now() + "_" + index),
+          storeName: storeName,
+          purchaseDate: purchaseDate,
+          addedItemIds: Array.isArray(receipt.addedItemIds)
+            ? receipt.addedItemIds.filter(function(x) { return typeof x === "string"; })
+            : [],
+          prevItemMap: prevMap,
+          items: cleanedItems
+        };
+      }
+
       function saveState() {
         try {
           if (window.localStorage) {
+            var safeItems = [];
+            if (Array.isArray(state.items)) {
+              for (var i = 0; i < state.items.length; i++) {
+                var normItem = normalizeItemForSave(state.items[i], i);
+                if (normItem) safeItems.push(normItem);
+              }
+            }
+            var safeReceipts = [];
+            if (Array.isArray(state.receipts)) {
+              for (var r = 0; r < state.receipts.length; r++) {
+                var normRcpt = normalizeReceiptForSave(state.receipts[r], r);
+                if (normRcpt) safeReceipts.push(normRcpt);
+              }
+            }
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
               subMode: state.subMode,
               recipeMode: state.recipeMode,
               dayOffset: state.dayOffset,
-              items: state.items,
-              receipts: state.receipts
+              items: safeItems,
+              receipts: safeReceipts
             }));
           }
         } catch (e) {}
@@ -1359,6 +1469,7 @@
       }
 
       var receiptLogExpanded = false;
+      var receiptStoreFilter = null; // 매장별 필터 (세션 변수 — localStorage 저장 안 함, null = 전체)
 
       function renderReceiptDbLog() {
         var logWrap = document.getElementById("receipt-db-log");
@@ -1366,21 +1477,71 @@
         logWrap.replaceChildren();
         var list = Array.isArray(state.receipts) ? state.receipts : [];
         if (list.length === 0) {
-          logWrap.appendChild(el("div", "sub", "등록된 영수증 내역이 없습니다."));
+          var emptyLog = el("div", "sub", "아직 등록된 영수증이 없어요. 위 📷 박스를 눌러 영수증 사진을 올리면 품목을 자동 인식해 인벤토리에 추가해 드립니다.");
+          emptyLog.style.padding = "16px";
+          emptyLog.style.textAlign = "center";
+          logWrap.appendChild(emptyLog);
           return;
         }
 
-        // Cumulative summary line
-        var totalCount = list.length;
-        var totalSpent = list.reduce(function(acc, r) {
+        // 저장된 상점명 목록 (중복 제거, 첫 등록 순서 유지)
+        var storeNames = [];
+        for (var s = 0; s < list.length; s++) {
+          var sn = String((list[s] && list[s].storeName) || "").trim();
+          if (sn && storeNames.indexOf(sn) === -1) storeNames.push(sn);
+        }
+        // 선택한 매장의 영수증이 전부 삭제되는 등으로 사라졌으면 필터를 전체로 되돌림
+        if (receiptStoreFilter && storeNames.indexOf(receiptStoreFilter) === -1) {
+          receiptStoreFilter = null;
+        }
+        var filtered = receiptStoreFilter
+          ? list.filter(function(r) { return String(r.storeName || "").trim() === receiptStoreFilter; })
+          : list;
+
+        // 매장별 필터 칩 ('전체' + 저장된 상점명) — 텍스트 칩이므로 게이지바 금지 규칙과 무관
+        if (storeNames.length > 1) {
+          var chipsWrap = el("div", "chat-chips");
+          var chipDefs = [{ label: "전체", value: null }];
+          for (var c = 0; c < storeNames.length; c++) {
+            chipDefs.push({ label: storeNames[c], value: storeNames[c] });
+          }
+          for (var cd = 0; cd < chipDefs.length; cd++) {
+            (function(chipDef) {
+              var isActive = receiptStoreFilter === chipDef.value;
+              var chip = el("button", isActive ? "chip-btn chip-active" : "chip-btn", chipDef.label);
+              chip.type = "button";
+              chip.addEventListener("click", function() {
+                receiptStoreFilter = chipDef.value;
+                renderReceiptDbLog();
+              });
+              chipsWrap.appendChild(chip);
+            })(chipDefs[cd]);
+          }
+          logWrap.appendChild(chipsWrap);
+        }
+
+        // Cumulative summary line (필터 적용된 목록 기준)
+        var totalCount = filtered.length;
+        var totalSpent = filtered.reduce(function(acc, r) {
           return acc + (r.items || []).reduce(function(a, it) {
             return a + Number(it.price || 0);
           }, 0);
         }, 0);
-        logWrap.appendChild(el("div", "sub", "📄 총 " + totalCount + "건 · 총 지출 $" + totalSpent.toFixed(2)));
+        var summaryText = receiptStoreFilter
+          ? ("📄 [" + receiptStoreFilter + "] " + totalCount + "건 · 지출 $" + totalSpent.toFixed(2))
+          : ("📄 총 " + totalCount + "건 · 총 지출 $" + totalSpent.toFixed(2));
+        logWrap.appendChild(el("div", "sub", summaryText));
+
+        if (filtered.length === 0) {
+          var emptyFiltered = el("div", "sub", "이 매장에 등록된 영수증이 없습니다.");
+          emptyFiltered.style.padding = "16px";
+          emptyFiltered.style.textAlign = "center";
+          logWrap.appendChild(emptyFiltered);
+          return;
+        }
 
         var LIST_PAGE_SIZE = 10;
-        var visibleCount = receiptLogExpanded ? list.length : Math.min(LIST_PAGE_SIZE, list.length);
+        var visibleCount = receiptLogExpanded ? filtered.length : Math.min(LIST_PAGE_SIZE, filtered.length);
 
         for (var i = 0; i < visibleCount; i++) {
           (function(r) {
@@ -1437,11 +1598,11 @@
 
             card.appendChild(actions);
             logWrap.appendChild(card);
-          })(list[i]);
+          })(filtered[i]);
         }
 
-        if (list.length > LIST_PAGE_SIZE) {
-          var toggleBtn = el("button", "btn-sm", receiptLogExpanded ? "▲ 접기" : "▼ 더보기 (" + (list.length - LIST_PAGE_SIZE) + "건)");
+        if (filtered.length > LIST_PAGE_SIZE) {
+          var toggleBtn = el("button", "btn-sm", receiptLogExpanded ? "▲ 접기" : "▼ 더보기 (" + (filtered.length - LIST_PAGE_SIZE) + "건)");
           toggleBtn.type = "button";
           toggleBtn.addEventListener("click", function() {
             receiptLogExpanded = !receiptLogExpanded;
@@ -1516,6 +1677,18 @@
         if (!wrap) return;
         wrap.replaceChildren();
 
+        if (state.items.length === 0) {
+          var rcpEmpty = el(
+            "div",
+            "sub",
+            "인벤토리가 비어 있어 요리를 추천할 수 없어요. 🥬 '인벤토리' 탭에서 영수증을 등록하거나 품목을 추가하면, 지금 재료로 만들 수 있는 요리를 보여드립니다 🙂"
+          );
+          rcpEmpty.style.padding = "20px";
+          rcpEmpty.style.textAlign = "center";
+          wrap.appendChild(rcpEmpty);
+          return;
+        }
+
         var matches = getRecipeMatches();
         var makeable = [];
         var nearMiss = [];
@@ -1577,6 +1750,17 @@
         var savedMoney = 0.0;
         var buyEntries = [];
 
+        if (state.items.length === 0) {
+          var invEmpty = el(
+            "div",
+            "sub",
+            "아직 인벤토리가 비어 있어요. 📸 '영수증' 탭에서 영수증 사진을 올리거나, 🛒 '쇼핑' 탭에서 품목을 직접 추가해 주세요. 등록된 품목은 소진 예측으로 알아서 관리해 드립니다 🙂"
+          );
+          invEmpty.style.padding = "20px";
+          invEmpty.style.textAlign = "center";
+          invContainer.appendChild(invEmpty);
+        }
+
         for (var i = 0; i < state.items.length; i++) {
           var item = state.items[i];
           var ev = evaluateItem(item);
@@ -1623,23 +1807,28 @@
         document.getElementById("subview-chat-inv").classList.toggle("hidden", state.subMode !== "chat");
 
         var badge = document.getElementById("mode-summary-badge");
+        // 3종 배지 외 배지 금지 규칙: 요약 정보는 배지(pill)가 아닌 일반 안내 텍스트(sub)로 표시
+        badge.className = "sub";
+        badge.style.fontWeight = "700";
         if (state.subMode === "inventory") {
-          badge.className = "pill pill-short";
           badge.textContent = "⚠️ 부족 " + shortCount + "개 · ✅ 충분 " + skipCount + "개";
         } else if (state.subMode === "buy") {
-          badge.className = "pill pill-skip";
           badge.textContent = "✅ 안 사도 되는 " + skipCount + "개로 $" + savedMoney.toFixed(2) + " 절약";
         } else if (state.subMode === "receipt") {
-          badge.className = "pill pill-skip";
           badge.textContent = "📄 영수증 " + (Array.isArray(state.receipts) ? state.receipts.length : 0) + "건";
         } else {
-          badge.className = "pill pill-skip";
           badge.textContent = "💬 AI 장보기 어드바이저";
         }
 
         var orderTotal = 0.0;
         if (buyEntries.length === 0) {
-          var empty = el("div", "sub", "쇼핑 리스트에 품목이 없습니다. 위 입력창에서 직접 추가하거나 [+7일]을 눌러보세요.");
+          var empty = el(
+            "div",
+            "sub",
+            state.items.length === 0
+              ? "쇼핑 리스트가 비어 있어요. 먼저 🥬 인벤토리에 품목을 추가하면 소진 예측으로 사야 할 것을 자동으로 담아드립니다."
+              : "지금은 사야 할 품목이 없어요! 재료가 모두 충분합니다 🎉 상단 [+7일]·[+14일] 버튼으로 미래 시점의 소진 예측을 미리 확인해 보세요."
+          );
           empty.style.padding = "20px";
           empty.style.textAlign = "center";
           buyList.appendChild(empty);
