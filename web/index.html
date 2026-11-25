@@ -10,29 +10,137 @@
   <link rel="manifest" href="manifest.json" />
   <title>Nuvori — 스마트 장보기</title>
   <style>
+    /* ================================================================
+       🎨 Nuvori 디자인 토큰 — 전체 테마는 이 블록만 수정하면 바뀝니다
+       (Figma MCP 연동 시 Figma 스타일 변수를 아래 값에 1:1 매핑)
+       ================================================================ */
     :root {
-      --background: #ffffff;
-      --foreground: #0f172a;
-      --card: #ffffff;
-      --border: #e2e8f0;
-      --secondary: #f1f5f9;
-      --muted-foreground: #64748b;
+      /* ── 브랜드 & 배경 ── */
+      --brand: #dc2626;             /* 앱 외곽 배경 (브랜드 레드) */
+      --background: #ffffff;        /* 페이지/입력창 기본 배경 */
+      --card: #ffffff;              /* 카드 배경 */
+      --foreground: #0f172a;        /* 기본 텍스트 */
+      --foreground-soft: #334155;   /* 중간 톤 텍스트 (AI 노트 등) */
+      --muted-foreground: #64748b;  /* 보조 텍스트 */
+      --secondary: #f1f5f9;         /* 기본 버튼/세그먼트 배경 */
+      --secondary-soft: #f8fafc;    /* 연한 배경 (업로드박스/썸네일) */
+      --border: #e2e8f0;            /* 일반 테두리 */
+      --border-strong: #cbd5e1;     /* 강조 테두리 (업로드 점선 등) */
+
+      /* ── 포인트 컬러 ── */
+      --primary: #0284c7;           /* 주 액션: 버튼/활성 탭/합계 금액 */
+      --primary-strong: #0369a1;    /* 주 액션 테두리/어두운 강조 */
+      --success: #10b981;           /* 주문 버튼 */
+      --success-strong: #059669;   /* 주문 버튼 테두리 */
+      --success-text: #047857;      /* 성공 계열 텍스트 (토스트/절약 배지) */
+      --danger: #e11d48;            /* 삭제/위험 텍스트 */
+
+      /* ── 포인트 컬러 투명 변형 ── */
+      --tint-primary-weak: rgba(2, 132, 199, 0.06);    /* 업로드 호버 */
+      --tint-primary-soft: rgba(2, 132, 199, 0.08);    /* 칩 배경 */
+      --tint-primary-medium: rgba(2, 132, 199, 0.12);  /* AI 노트 배경 */
+      --tint-primary-strong: rgba(2, 132, 199, 0.16);  /* 칩 호버 */
+      --tint-primary-border: rgba(2, 132, 199, 0.28);  /* 칩 테두리 */
+      --tint-primary-overlay: rgba(2, 132, 199, 0.09); /* 검수 박스 배경 */
+      --tint-success-bg: rgba(16, 185, 129, 0.15);     /* 토스트 배경 */
+      --tint-success-border: rgba(16, 185, 129, 0.5);  /* 토스트 테두리 */
+      --tint-success-soft: rgba(16, 185, 129, 0.1);    /* 절약 노트 배경 */
+      --tint-success-note-border: rgba(16, 185, 129, 0.25);
+      --tint-danger-bg: rgba(244, 63, 94, 0.16);       /* 삭제 버튼 배경 */
+      --tint-danger-border: rgba(244, 63, 94, 0.4);    /* 삭제 버튼 테두리 */
+
+      /* ── 3종 배지 (규칙: 이 3종 외 배지 금지) ── */
+      --pill-short-bg: rgba(245, 158, 11, 0.16);   /* ⚠️ 부족하다 */
+      --pill-short-fg: #b45309;
+      --pill-short-border: rgba(245, 158, 11, 0.35);
+      --pill-skip-bg: rgba(16, 185, 129, 0.16);    /* ✅ 안 사도 된다 */
+      --pill-skip-fg: #047857;
+      --pill-skip-border: rgba(16, 185, 129, 0.35);
+      --pill-buy-bg: rgba(244, 63, 94, 0.16);      /* 🛒 사야 한다 */
+      --pill-buy-fg: #e11d48;
+      --pill-buy-border: rgba(244, 63, 94, 0.35);
+
+      /* ── 모서리 둥글기 ── */
+      --radius-lg: 16px;    /* 카드 */
+      --radius-md: 12px;    /* 내부 박스/토스트 */
+      --radius-sm: 10px;    /* 버튼/입력창/썸네일 */
+      --radius-xs: 8px;     /* 작은 버튼 */
+      --radius-pill: 99px;  /* 배지/칩 */
+
+      /* ── 그림자 ── */
+      --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-tab: 0 2px 8px rgba(2, 132, 199, 0.35);
+      --shadow-seg: 0 1px 4px rgba(0, 0, 0, 0.25);
+      --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+      /* ── 타이포 크기 ── */
+      --font-title: 19px;   /* 앱 타이틀 */
+      --font-body: 14px;    /* 본문/품목명 */
+      --font-sub: 13px;     /* 보조 설명 */
+      --font-small: 12px;   /* 배지/작은 텍스트 */
+      --font-total: 26px;   /* 합계 금액 */
+      /* input은 iOS 줌 방지를 위해 16px 고정 — 토큰화하지 않음 (규칙) */
     }
+
+    /* ── 다크 모드: 색 토큰만 오버라이드 (레이아웃은 그대로) ── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #0f172a;
+        --card: #1e293b;
+        --foreground: #f1f5f9;
+        --foreground-soft: #cbd5e1;
+        --muted-foreground: #94a3b8;
+        --secondary: #334155;
+        --secondary-soft: #1e293b;
+        --border: #334155;
+        --border-strong: #475569;
+        --primary: #38bdf8;
+        --primary-strong: #0ea5e9;
+        --success: #34d399;
+        --success-strong: #10b981;
+        --success-text: #34d399;
+        --danger: #fb7185;
+        --tint-primary-weak: rgba(56, 189, 248, 0.08);
+        --tint-primary-soft: rgba(56, 189, 248, 0.12);
+        --tint-primary-medium: rgba(56, 189, 248, 0.16);
+        --tint-primary-strong: rgba(56, 189, 248, 0.22);
+        --tint-primary-border: rgba(56, 189, 248, 0.35);
+        --tint-primary-overlay: rgba(56, 189, 248, 0.12);
+        --tint-success-bg: rgba(52, 211, 153, 0.18);
+        --tint-success-border: rgba(52, 211, 153, 0.45);
+        --tint-success-soft: rgba(52, 211, 153, 0.12);
+        --tint-success-note-border: rgba(52, 211, 153, 0.3);
+        --tint-danger-bg: rgba(251, 113, 133, 0.18);
+        --tint-danger-border: rgba(251, 113, 133, 0.45);
+        --pill-short-bg: rgba(251, 191, 36, 0.16);
+        --pill-short-fg: #fbbf24;
+        --pill-short-border: rgba(251, 191, 36, 0.35);
+        --pill-skip-bg: rgba(52, 211, 153, 0.16);
+        --pill-skip-fg: #34d399;
+        --pill-skip-border: rgba(52, 211, 153, 0.35);
+        --pill-buy-bg: rgba(251, 113, 133, 0.16);
+        --pill-buy-fg: #fb7185;
+        --pill-buy-border: rgba(251, 113, 133, 0.35);
+        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --shadow-seg: 0 1px 4px rgba(0, 0, 0, 0.5);
+      }
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
-      background: #dc2626;
-      color: var(--foreground, #0f172a);
+      background: var(--brand);
+      color: var(--foreground);
       padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
       line-height: 1.45;
     }
     .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
     .card {
-      background: var(--card, #ffffff);
-      border: 1px solid var(--border, #e2e8f0);
-      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 20px;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      box-shadow: var(--shadow-card);
     }
     .header-row {
       display: flex;
@@ -41,72 +149,72 @@
       align-items: center;
       gap: 10px;
     }
-    h1 { font-size: 19px; font-weight: 800; }
-    .sub { font-size: 13px; color: var(--muted-foreground, #64748b); }
+    h1 { font-size: var(--font-title); font-weight: 800; }
+    .sub { font-size: var(--font-sub); color: var(--muted-foreground); }
     .btn-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     button {
       cursor: pointer;
       font-family: inherit;
-      font-size: 13px;
+      font-size: var(--font-sub);
       font-weight: 600;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       padding: 8px 14px;
-      border: 1px solid var(--border, #e2e8f0);
-      background: var(--secondary, #f1f5f9);
-      color: var(--foreground, #0f172a);
+      border: 1px solid var(--border);
+      background: var(--secondary);
+      color: var(--foreground);
       transition: all 0.15s;
     }
     button:hover { opacity: 0.92; }
     .btn-primary {
-      background: #0284c7;
+      background: var(--primary);
       color: #ffffff;
-      border-color: #0369a1;
+      border-color: var(--primary-strong);
       font-weight: 700;
     }
     .btn-order {
-      background: #10b981;
+      background: var(--success);
       color: #ffffff;
-      border-color: #059669;
-      font-size: 14px;
+      border-color: var(--success-strong);
+      font-size: var(--font-body);
       font-weight: 800;
       padding: 11px 22px;
     }
     .btn-danger {
-      background: rgba(244, 63, 94, 0.16);
-      color: #e11d48;
-      border-color: rgba(244, 63, 94, 0.4);
+      background: var(--tint-danger-bg);
+      color: var(--danger);
+      border-color: var(--tint-danger-border);
       font-weight: 700;
     }
-    .btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+    .btn-sm { padding: 6px 11px; font-size: var(--font-small); border-radius: var(--radius-xs); }
 
-    /* Top 3 Main Tabs */
+    /* 메인 탭 (🥬 인벤토리 | 🍳 레시피) */
     .main-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 6px;
-      background: var(--card, #ffffff);
+      background: var(--card);
       padding: 6px;
       border-radius: 14px;
-      border: 1px solid var(--border, #e2e8f0);
+      border: 1px solid var(--border);
     }
     .tab-btn {
       padding: 11px 8px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       border: none;
-      font-size: 13px;
+      font-size: var(--font-sub);
       font-weight: 700;
       background: transparent;
-      color: var(--muted-foreground, #64748b);
+      color: var(--muted-foreground);
       text-align: center;
       white-space: nowrap;
     }
     .tab-btn.active {
-      background: #0284c7;
+      background: var(--primary);
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+      box-shadow: var(--shadow-tab);
     }
 
-    /* Segmented Toggle inside Tab 1 (인벤토리 <-> 쇼핑 리스트) */
+    /* 섹션 내부 세그먼트 토글 */
     .mode-toggle-wrap {
       display: flex;
       justify-content: space-between;
@@ -115,43 +223,43 @@
       gap: 10px;
       margin-bottom: 16px;
       padding-bottom: 14px;
-      border-bottom: 1px solid var(--border, #e2e8f0);
+      border-bottom: 1px solid var(--border);
     }
     .seg-toggle {
       display: inline-flex;
-      background: #f1f5f9;
+      background: var(--secondary);
       padding: 4px;
-      border-radius: 12px;
-      border: 1px solid var(--border, #e2e8f0);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
     }
     .seg-btn {
       border: none;
       background: transparent;
-      color: var(--muted-foreground, #64748b);
+      color: var(--muted-foreground);
       padding: 8px 16px;
       border-radius: 9px;
-      font-size: 13px;
+      font-size: var(--font-sub);
       font-weight: 700;
     }
     .seg-btn.active {
-      background: var(--card, #ffffff);
-      color: var(--foreground, #0f172a);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-      border: 1px solid #0284c7;
+      background: var(--card);
+      color: var(--foreground);
+      box-shadow: var(--shadow-seg);
+      border: 1px solid var(--primary);
     }
 
     .toast {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.5);
-      color: #047857;
+      background: var(--tint-success-bg);
+      border: 1px solid var(--tint-success-border);
+      color: var(--success-text);
       padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 13px;
+      border-radius: var(--radius-md);
+      font-size: var(--font-sub);
       font-weight: 700;
       display: none;
     }
     .upload-box {
-      border: 2px dashed #cbd5e1;
+      border: 2px dashed var(--border-strong);
       border-radius: 14px;
       padding: 28px 20px;
       text-align: center;
@@ -161,10 +269,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      background: #f8fafc;
+      background: var(--secondary-soft);
       margin-bottom: 16px;
     }
-    .upload-box:hover { border-color: #0284c7; background: rgba(2, 132, 199, 0.06); }
+    .upload-box:hover { border-color: var(--primary); background: var(--tint-primary-weak); }
     .input-row {
       display: flex;
       gap: 8px;
@@ -172,10 +280,10 @@
     }
     input[type="text"], input[type="number"], input[type="date"] {
       padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border, #e2e8f0);
-      background: var(--background, #ffffff);
-      color: var(--foreground, #0f172a);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
       /* iOS 자동 줌인 방지: 모든 input은 16px 이상 유지 (web/CLAUDE.md 규칙) */
       font-size: 16px;
       font-family: inherit;
@@ -183,10 +291,10 @@
     input[type="text"] { flex: 1; min-width: 0; }
     input[type="number"] { width: 86px; }
 
-    /* Receipt Review & Edit Staging Box */
+    /* 영수증 검수/수정 스테이징 박스 */
     .review-staging-box {
-      background: rgba(2, 132, 199, 0.09);
-      border: 2px solid #0284c7;
+      background: var(--tint-primary-overlay);
+      border: 2px solid var(--primary);
       border-radius: 14px;
       padding: 16px;
       margin-bottom: 18px;
@@ -197,7 +305,7 @@
     .review-header-title {
       font-size: 15px;
       font-weight: 800;
-      color: #0369a1;
+      color: var(--primary-strong);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -211,7 +319,7 @@
     }
     .review-field-label {
       font-size: 11px;
-      color: #64748b;
+      color: var(--muted-foreground);
       margin-bottom: 4px;
       font-weight: 700;
     }
@@ -219,10 +327,10 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: var(--background, #ffffff);
-      border: 1px solid var(--border, #e2e8f0);
+      background: var(--background);
+      border: 1px solid var(--border);
       padding: 8px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       flex-wrap: wrap;
     }
     .review-item-row input[type="text"] {
@@ -243,9 +351,9 @@
 
     .item-list { display: flex; flex-direction: column; gap: 10px; }
     .item-card {
-      background: var(--background, #ffffff);
-      border: 1px solid var(--border, #e2e8f0);
-      border-radius: 12px;
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
       padding: 12px 14px;
       display: flex;
       align-items: center;
@@ -263,11 +371,11 @@
     .item-thumb {
       width: 44px;
       height: 44px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       flex-shrink: 0;
       object-fit: cover;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
+      border: 1px solid var(--border);
+      background: var(--secondary-soft);
     }
     .item-info {
       display: flex;
@@ -277,55 +385,55 @@
       flex: 1;
     }
     .item-name {
-      font-size: 14px;
+      font-size: var(--font-body);
       font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .item-days {
-      font-size: 12px;
-      color: var(--muted-foreground, #64748b);
+      font-size: var(--font-small);
+      color: var(--muted-foreground);
     }
     .pill {
       display: inline-flex;
       align-items: center;
       gap: 5px;
       padding: 5px 11px;
-      border-radius: 99px;
-      font-size: 12px;
+      border-radius: var(--radius-pill);
+      font-size: var(--font-small);
       font-weight: 700;
       white-space: nowrap;
       flex-shrink: 0;
     }
     .pill-short {
-      background: rgba(245, 158, 11, 0.16);
-      color: #b45309;
-      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: var(--pill-short-bg);
+      color: var(--pill-short-fg);
+      border: 1px solid var(--pill-short-border);
     }
     .pill-buy {
-      background: rgba(244, 63, 94, 0.16);
-      color: #e11d48;
-      border: 1px solid rgba(244, 63, 94, 0.35);
+      background: var(--pill-buy-bg);
+      color: var(--pill-buy-fg);
+      border: 1px solid var(--pill-buy-border);
     }
     .pill-skip {
-      background: rgba(16, 185, 129, 0.16);
-      color: #047857;
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: var(--pill-skip-bg);
+      color: var(--pill-skip-fg);
+      border: 1px solid var(--pill-skip-border);
     }
     .summary-footer {
       margin-top: 18px;
       padding-top: 16px;
-      border-top: 1px solid var(--border, #e2e8f0);
+      border-top: 1px solid var(--border);
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
     }
-    .total-price { font-size: 26px; font-weight: 800; color: #0284c7; }
+    .total-price { font-size: var(--font-total); font-weight: 800; color: var(--primary); }
 
-    /* Chat Tab Styles */
+    /* 채팅 스타일 */
     .chat-chips {
       display: flex;
       flex-wrap: wrap;
@@ -333,21 +441,21 @@
       margin-bottom: 12px;
     }
     .chip-btn {
-      font-size: 12px;
+      font-size: var(--font-small);
       padding: 6px 11px;
-      border-radius: 99px;
-      background: rgba(2, 132, 199, 0.08);
-      border: 1px solid rgba(2, 132, 199, 0.28);
-      color: #0369a1;
+      border-radius: var(--radius-pill);
+      background: var(--tint-primary-soft);
+      border: 1px solid var(--tint-primary-border);
+      color: var(--primary-strong);
       font-weight: 600;
     }
     .chip-btn:hover {
-      background: rgba(2, 132, 199, 0.16);
+      background: var(--tint-primary-strong);
     }
     .chip-btn.chip-active {
-      background: #0284c7;
+      background: var(--primary);
       color: #ffffff;
-      border-color: #0369a1;
+      border-color: var(--primary-strong);
       font-weight: 700;
     }
     .chat-messages {
@@ -361,20 +469,20 @@
     }
     .chat-bubble-user {
       align-self: flex-end;
-      background: #0284c7;
+      background: var(--primary);
       color: #ffffff;
       padding: 10px 14px;
       border-radius: 16px 16px 4px 16px;
       max-width: 85%;
-      font-size: 14px;
+      font-size: var(--font-body);
       font-weight: 600;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: var(--shadow-bubble);
     }
     .chat-bubble-bot {
       align-self: flex-start;
-      background: var(--background, #ffffff);
-      border: 1px solid var(--border, #e2e8f0);
-      color: var(--foreground, #0f172a);
+      background: var(--background);
+      border: 1px solid var(--border);
+      color: var(--foreground);
       padding: 14px;
       border-radius: 16px 16px 16px 4px;
       width: 100%;
@@ -383,35 +491,36 @@
       gap: 12px;
     }
     .chat-bot-text {
-      font-size: 14px;
+      font-size: var(--font-body);
       line-height: 1.5;
     }
     .chat-shop-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
+      background: var(--secondary-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
       padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
     .chat-skip-note {
-      font-size: 12px;
-      color: #047857;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.25);
+      font-size: var(--font-small);
+      color: var(--success-text);
+      background: var(--tint-success-soft);
+      border: 1px solid var(--tint-success-note-border);
       padding: 8px 10px;
-      border-radius: 8px;
+      border-radius: var(--radius-xs);
     }
     .chat-ai-note {
       font-size: 12.5px;
-      color: #334155;
-      background: rgba(2, 132, 199, 0.12);
-      border-left: 3px solid #0284c7;
+      color: var(--foreground-soft);
+      background: var(--tint-primary-medium);
+      border-left: 3px solid var(--primary);
       padding: 8px 10px;
       border-radius: 6px;
     }
     .hidden { display: none !important; }
+
   </style>
 </head>
 <body>
