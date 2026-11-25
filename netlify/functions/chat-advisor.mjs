@@ -12,7 +12,7 @@ export default async (req) => {
   }
 
   try {
-    const { message = "", dayOffset = 0, inventorySummary = [], receiptHistory = [] } = await req.json();
+    const { message = "", dayOffset = 0, inventorySummary = [], receiptHistory = [], makeableRecipes = [], nearMissRecipes = [] } = await req.json();
     if (!message || typeof message !== "string") {
       return new Response(JSON.stringify({ error: "Missing message" }), {
         status: 400,
@@ -53,12 +53,31 @@ export default async (req) => {
           "이번에 다시 사야 할 품목과 아직 집에 남아 있을 품목을 더 정확히 판단하세요. 매장별로 자주 가는 곳이 있다면 언급해도 좋습니다.\n\n"
         : "";
 
+    function sanitizeStringList(value, maxCount) {
+      return (Array.isArray(value) ? value : [])
+        .filter(function (x) { return typeof x === "string" && x.length > 0; })
+        .slice(0, maxCount);
+    }
+
+    const trimmedMakeable = sanitizeStringList(makeableRecipes, 8);
+    const trimmedNearMiss = sanitizeStringList(nearMissRecipes, 5);
+
+    const recipeBlock =
+      trimmedMakeable.length > 0 || trimmedNearMiss.length > 0
+        ? "집에 있는 재료로 지금 만들 수 있는 요리: " +
+          (trimmedMakeable.length > 0 ? trimmedMakeable.join(", ") : "없음") +
+          "\n재료가 1~2개 부족한 요리: " +
+          (trimmedNearMiss.length > 0 ? trimmedNearMiss.join(", ") : "없음") +
+          "\n요리·레시피 관련 질문이면 이 목록의 요리를 우선 추천하고, 남은 재료를 활용해 음식 낭비를 줄이는 조언으로 연결하세요.\n\n"
+        : "";
+
     const promptText =
       "당신은 Nuvori AI 스마트 장보기 어드바이저입니다.\n" +
       "현재 기준 시점: 장본 지 +" + Number(dayOffset || 0) + "일 경과\n" +
       "현재 가구 인벤토리 및 3-State HSMM 소진 예측 상태:\n" +
       safeStringify(inventorySummary, "[]") + "\n\n" +
       historyBlock +
+      recipeBlock +
       "사용자 질문: \"" + message.slice(0, 300) + "\"\n\n" +
       "위 인벤토리 상태(사야 할 품목 isShort=true vs 아직 집에 있는 품목 isShort=false, 경과일 elapsed, 고갈확률 pDepleted)" +
       (trimmedHistory.length > 0 ? "와 구매 이력의 반복 구매 패턴" : "") +

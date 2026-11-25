@@ -421,6 +421,7 @@
       <button id="tab-main-btn" type="button" class="tab-btn active">🥬 인벤토리·쇼핑</button>
       <button id="tab-chat-btn" type="button" class="tab-btn">💬 장보기 챗</button>
       <button id="tab-upload-btn" type="button" class="tab-btn">📸 사진 올리기</button>
+      <button id="tab-recipe-btn" type="button" class="tab-btn">🍳 레시피</button>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -487,9 +488,15 @@
       <div id="receipt-review-container" class="hidden"></div>
 
       <div style="border-top: 1px solid var(--border, #334155); padding-top: 14px;">
-        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [↩️ 되돌리기/삭제] 가능)</div>
+        <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🗄️ 최근 등록된 영수증 내역 (잘못 등록된 영수증은 [✏️ 수정] 또는 [🗑 삭제] 가능)</div>
         <div id="receipt-db-log" class="item-list"></div>
       </div>
+    </div>
+
+    <!-- 🍳 레시피 탭: 인벤토리 재료 기반 요리 추천 -->
+    <div id="view-recipe" class="card hidden">
+      <div class="sub" style="font-weight: 700; margin-bottom: 8px;">🍳 인벤토리 재료로 만들 수 있는 요리</div>
+      <div id="recipe-list" class="item-list"></div>
     </div>
 
   </div>
@@ -631,9 +638,91 @@
       var CHAT_QUICK_PROMPTS = [
         "오늘 장본지 3일 됐는데, 뭐 사야돼?",
         "장본지 7일 지났는데 뭐 사야돼?",
-        "이번 주 외식 많아서 집밥 2끼만 먹을 건데 뭐 사야돼?",
+        "집에 남은 재료로 뭐 해먹을 수 있어?",
         "두부 다 먹었어, 쇼핑리스트에 추가해줘"
       ];
+
+      var RECIPES = [
+        { id: "recipe_egg_ramen", name: "계란 라면", emoji: "🍜", ingredients: ["라면", "계란"] },
+        { id: "recipe_olive_pasta", name: "올리브유 파스타", emoji: "🍝", ingredients: ["파스타", "올리브유"] },
+        { id: "recipe_spinach_pasta", name: "시금치 파스타", emoji: "🥬", ingredients: ["파스타", "올리브유", "시금치"] },
+        { id: "recipe_tofu_jorim", name: "두부조림", emoji: "🍛", ingredients: ["두부", "간장"] },
+        { id: "recipe_tofu_steak", name: "두부 스테이크", emoji: "🥩", ingredients: ["두부", "올리브유", "간장"] },
+        { id: "recipe_spinach_egg", name: "시금치 계란볶음", emoji: "🍳", ingredients: ["시금치", "계란"] },
+        { id: "recipe_scrambled_egg", name: "우유 스크램블 에그", emoji: "🍳", ingredients: ["계란", "우유"] },
+        { id: "recipe_kimchi_fried_rice", name: "김치볶음밥", emoji: "🍚", ingredients: ["김치", "쌀", "계란"] },
+        { id: "recipe_tofu_kimchi", name: "두부김치", emoji: "🍲", ingredients: ["두부", "김치"] },
+        { id: "recipe_doenjang_stew", name: "된장찌개", emoji: "🍲", ingredients: ["된장", "두부", "애호박", "양파"] },
+        { id: "recipe_milk_cream_soup", name: "우유 크림스프", emoji: "🥣", ingredients: ["우유", "양파", "감자"] }
+      ];
+
+      function normalizeFoodName(s) {
+        return String(s || "").toLowerCase().replace(/\s+/g, "");
+      }
+
+      // Find an inventory item matching a recipe ingredient keyword (bi-directional containment)
+      function findInventoryItemForIngredient(keyword) {
+        var k = normalizeFoodName(keyword);
+        if (!k) return null;
+        for (var i = 0; i < state.items.length; i++) {
+          var n = normalizeFoodName(state.items[i].name);
+          if (n.indexOf(k) !== -1 || k.indexOf(n) !== -1) {
+            return state.items[i];
+          }
+        }
+        return null;
+      }
+
+      // Match every recipe against current inventory (HSMM depletion-aware)
+      function getRecipeMatches() {
+        var matches = [];
+        for (var i = 0; i < RECIPES.length; i++) {
+          var rc = RECIPES[i];
+          var inStock = [];
+          var missing = [];
+          for (var j = 0; j < rc.ingredients.length; j++) {
+            var kw = rc.ingredients[j];
+            var found = findInventoryItemForIngredient(kw);
+            if (!found) {
+              missing.push({ name: kw, status: "없음" });
+            } else {
+              var ev = evaluateItem(found);
+              if (ev.isShort) {
+                missing.push({ name: kw, status: "부족" });
+              } else {
+                inStock.push(found.name);
+              }
+            }
+          }
+          matches.push({ recipe: rc, inStock: inStock, missing: missing });
+        }
+        return matches;
+      }
+
+      // Add (or flag) an ingredient on the shopping list. Returns true when applied.
+      function addIngredientToBuyList(name) {
+        var trimmed = String(name || "").trim();
+        if (!trimmed) return false;
+        for (var i = 0; i < state.items.length; i++) {
+          if (state.items[i].name === trimmed) {
+            state.items[i].manualNeedToBuy = true;
+            state.items[i].checkedForOrder = true;
+            return true;
+          }
+        }
+        state.items.unshift({
+          id: "buy_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+          thumbKey: inferThumbKey(trimmed),
+          name: trimmed,
+          price: 4.50,
+          cycleDays: 10,
+          boughtDay: state.dayOffset - 10,
+          manualNeedToBuy: true,
+          isManuallyAdded: true,
+          checkedForOrder: true
+        });
+        return true;
+      }
 
       var STORAGE_KEY = "nuvori_poc_state_v2";
 
@@ -1357,6 +1446,85 @@
         }
       }
 
+      function createRecipeCard(match) {
+        var rc = match.recipe;
+        var card = el("div", "item-card");
+
+        var emojiBox = el("div", "");
+        emojiBox.style.fontSize = "30px";
+        emojiBox.style.width = "44px";
+        emojiBox.style.height = "44px";
+        emojiBox.style.display = "flex";
+        emojiBox.style.alignItems = "center";
+        emojiBox.style.justifyContent = "center";
+        emojiBox.style.flexShrink = "0";
+        emojiBox.textContent = rc.emoji;
+        card.appendChild(emojiBox);
+
+        var info = el("div", "item-info");
+        if (match.missing.length === 0) {
+          info.appendChild(el("div", "item-name", rc.name));
+          info.appendChild(el("div", "item-days", "재료: " + match.inStock.join(", ")));
+        } else {
+          var missingNames = match.missing.map(function(m) {
+            return m.name + (m.status === "부족" ? "(곧 소진)" : "");
+          });
+          info.appendChild(el("div", "item-name", rc.name + " · 재료 " + match.missing.length + "개 부족"));
+          info.appendChild(el("div", "item-days", "부족: " + missingNames.join(", ")));
+        }
+        card.appendChild(info);
+
+        if (match.missing.length > 0) {
+          var actions = el("div", "btn-group");
+          var addBtn = el("button", "btn-primary btn-sm", "🛒 부족 재료 담기");
+          addBtn.type = "button";
+          addBtn.addEventListener("click", function() {
+            var addedCount = 0;
+            for (var a = 0; a < match.missing.length; a++) {
+              if (addIngredientToBuyList(match.missing[a].name)) addedCount++;
+            }
+            showToast("🛒 '" + rc.name + "' 부족 재료 " + addedCount + "개가 쇼핑 리스트에 추가되었습니다!");
+            state.subMode = "buy";
+            renderAll();
+          });
+          actions.appendChild(addBtn);
+          card.appendChild(actions);
+        }
+
+        return card;
+      }
+
+      function renderRecipeView() {
+        var wrap = document.getElementById("recipe-list");
+        if (!wrap) return;
+        wrap.replaceChildren();
+
+        var matches = getRecipeMatches();
+        var makeable = [];
+        var nearMiss = [];
+        for (var i = 0; i < matches.length; i++) {
+          if (matches[i].missing.length === 0) makeable.push(matches[i]);
+          else nearMiss.push(matches[i]);
+        }
+        nearMiss.sort(function(a, b) { return a.missing.length - b.missing.length; });
+
+        if (makeable.length > 0) {
+          wrap.appendChild(el("div", "sub", "✅ 지금 만들 수 있는 요리 (" + makeable.length + "개)"));
+          for (var m = 0; m < makeable.length; m++) {
+            wrap.appendChild(createRecipeCard(makeable[m]));
+          }
+        } else {
+          wrap.appendChild(el("div", "sub", "아직 재료가 모두 갖춰진 요리는 없어요. 아래에서 골라보세요 🙂"));
+        }
+
+        if (nearMiss.length > 0) {
+          wrap.appendChild(el("div", "sub", "🛒 재료가 조금 부족한 요리 (부족 재료를 쇼핑 리스트에 담을 수 있어요)"));
+          for (var t = 0; t < nearMiss.length; t++) {
+            wrap.appendChild(createRecipeCard(nearMiss[t]));
+          }
+        }
+      }
+
       function executeOrderNow() {
         var orderedCount = 0;
         var totalPaid = 0.0;
@@ -1704,6 +1872,21 @@
                 })
               };
             });
+          var recipeMatches = getRecipeMatches();
+          var makeableRecipes = [];
+          var nearMissRecipes = [];
+          for (var rm = 0; rm < recipeMatches.length; rm++) {
+            if (recipeMatches[rm].missing.length === 0) {
+              makeableRecipes.push(recipeMatches[rm].recipe.name);
+            } else if (recipeMatches[rm].missing.length <= 2) {
+              nearMissRecipes.push(
+                recipeMatches[rm].recipe.name +
+                " (부족: " +
+                recipeMatches[rm].missing.map(function(x) { return x.name; }).join(", ") +
+                ")"
+              );
+            }
+          }
           fetch("/.netlify/functions/chat-advisor", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1711,7 +1894,9 @@
               message: userQuery,
               dayOffset: state.dayOffset,
               inventorySummary: invSummary,
-              receiptHistory: rcptHistory
+              receiptHistory: rcptHistory,
+              makeableRecipes: makeableRecipes.slice(0, 8),
+              nearMissRecipes: nearMissRecipes.slice(0, 5)
             })
           })
           .then(function(res) {
@@ -1785,23 +1970,28 @@
         var tabMainBtn = document.getElementById("tab-main-btn");
         var tabChatBtn = document.getElementById("tab-chat-btn");
         var tabUploadBtn = document.getElementById("tab-upload-btn");
+        var tabRecipeBtn = document.getElementById("tab-recipe-btn");
 
         var viewMain = document.getElementById("view-main");
         var viewChat = document.getElementById("view-chat");
         var viewUpload = document.getElementById("view-upload");
+        var viewRecipe = document.getElementById("view-recipe");
 
         tabMainBtn.className = state.activeTab === "main" ? "tab-btn active" : "tab-btn";
         tabChatBtn.className = state.activeTab === "chat" ? "tab-btn active" : "tab-btn";
         tabUploadBtn.className = state.activeTab === "upload" ? "tab-btn active" : "tab-btn";
+        tabRecipeBtn.className = state.activeTab === "recipe" ? "tab-btn active" : "tab-btn";
 
         viewMain.classList.toggle("hidden", state.activeTab !== "main");
         viewChat.classList.toggle("hidden", state.activeTab !== "chat");
         viewUpload.classList.toggle("hidden", state.activeTab !== "upload");
+        viewRecipe.classList.toggle("hidden", state.activeTab !== "recipe");
 
         renderDayButtons();
         renderReceiptReviewEditor();
         renderReceiptDbLog();
         renderMainView();
+        renderRecipeView();
       }
 
       // Wire Tabs & Toggle
@@ -1817,6 +2007,11 @@
 
       document.getElementById("tab-upload-btn").addEventListener("click", function() {
         state.activeTab = "upload";
+        renderAll();
+      });
+
+      document.getElementById("tab-recipe-btn").addEventListener("click", function() {
+        state.activeTab = "recipe";
         renderAll();
       });
 
