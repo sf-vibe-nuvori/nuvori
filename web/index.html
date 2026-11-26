@@ -17,6 +17,14 @@
     :root {
       /* ── 브랜드 & 배경 ── */
       --brand: #dc2626;             /* 앱 외곽 배경 (브랜드 레드) */
+      --brand-gradient:
+        radial-gradient(120% 60% at 0% 0%, #f87171 0%, rgba(248, 113, 113, 0) 60%),
+        radial-gradient(90% 50% at 100% 10%, #fb923c 0%, rgba(251, 146, 60, 0) 55%),
+        linear-gradient(180deg, #dc2626 0%, #b91c1c 55%, #991b1b 100%);
+      --on-brand: #ffffff;          /* 브랜드 배경 위 텍스트 */
+      --on-brand-soft: rgba(255, 255, 255, 0.82);
+      --glass: rgba(255, 255, 255, 0.16);       /* 브랜드 배경 위 반투명 면 */
+      --glass-border: rgba(255, 255, 255, 0.28);
       --background: #ffffff;        /* 페이지/입력창 기본 배경 */
       --card: #ffffff;              /* 카드 배경 */
       --foreground: #0f172a;        /* 기본 텍스트 */
@@ -28,20 +36,21 @@
       --border-strong: #cbd5e1;     /* 강조 테두리 (업로드 점선 등) */
 
       /* ── 포인트 컬러 ── */
-      --primary: #0284c7;           /* 주 액션: 버튼/활성 탭/합계 금액 */
-      --primary-strong: #0369a1;    /* 주 액션 테두리/어두운 강조 */
+      --primary: #1f2937;           /* 주 액션: 버튼/활성 칩/합계 금액 (레드 배경과 충돌 없는 잉크톤) */
+      --primary-strong: #111827;    /* 주 액션 테두리/어두운 강조 */
+      --on-primary: #ffffff;        /* 주 액션 위 텍스트 */
       --success: #10b981;           /* 주문 버튼 */
       --success-strong: #059669;   /* 주문 버튼 테두리 */
       --success-text: #047857;      /* 성공 계열 텍스트 (토스트/절약 배지) */
       --danger: #e11d48;            /* 삭제/위험 텍스트 */
 
       /* ── 포인트 컬러 투명 변형 ── */
-      --tint-primary-weak: rgba(2, 132, 199, 0.06);    /* 업로드 호버 */
-      --tint-primary-soft: rgba(2, 132, 199, 0.08);    /* 칩 배경 */
-      --tint-primary-medium: rgba(2, 132, 199, 0.12);  /* AI 노트 배경 */
-      --tint-primary-strong: rgba(2, 132, 199, 0.16);  /* 칩 호버 */
-      --tint-primary-border: rgba(2, 132, 199, 0.28);  /* 칩 테두리 */
-      --tint-primary-overlay: rgba(2, 132, 199, 0.09); /* 검수 박스 배경 */
+      --tint-primary-weak: rgba(31, 41, 55, 0.04);    /* 업로드 호버 */
+      --tint-primary-soft: rgba(31, 41, 55, 0.06);    /* 칩 배경 */
+      --tint-primary-medium: rgba(31, 41, 55, 0.06);  /* AI 노트 배경 */
+      --tint-primary-strong: rgba(31, 41, 55, 0.12);  /* 칩 호버 */
+      --tint-primary-border: rgba(31, 41, 55, 0.18);  /* 칩 테두리 */
+      --tint-primary-overlay: rgba(31, 41, 55, 0.04); /* 검수 박스 배경 */
       --tint-success-bg: rgba(16, 185, 129, 0.15);     /* 토스트 배경 */
       --tint-success-border: rgba(16, 185, 129, 0.5);  /* 토스트 테두리 */
       --tint-success-soft: rgba(16, 185, 129, 0.1);    /* 절약 노트 배경 */
@@ -61,20 +70,21 @@
       --pill-buy-border: rgba(244, 63, 94, 0.35);
 
       /* ── 모서리 둥글기 ── */
-      --radius-lg: 16px;    /* 카드 */
-      --radius-md: 12px;    /* 내부 박스/토스트 */
+      --radius-lg: 22px;    /* 카드 */
+      --radius-md: 14px;    /* 내부 박스/토스트 */
       --radius-sm: 10px;    /* 버튼/입력창/썸네일 */
       --radius-xs: 8px;     /* 작은 버튼 */
       --radius-pill: 99px;  /* 배지/칩 */
 
       /* ── 그림자 ── */
-      --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
-      --shadow-tab: 0 2px 8px rgba(2, 132, 199, 0.35);
+      --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px -12px rgba(127, 29, 29, 0.45);
+      --shadow-tab: 0 2px 10px rgba(15, 23, 42, 0.18);
+      --shadow-item-hover: 0 6px 18px -8px rgba(15, 23, 42, 0.25);
       --shadow-seg: 0 1px 4px rgba(0, 0, 0, 0.25);
       --shadow-bubble: 0 2px 6px rgba(0, 0, 0, 0.15);
 
       /* ── 타이포 크기 ── */
-      --font-title: 19px;   /* 앱 타이틀 */
+      --font-title: 24px;   /* 앱 타이틀 */
       --font-body: 14px;    /* 본문/품목명 */
       --font-sub: 13px;     /* 보조 설명 */
       --font-small: 12px;   /* 배지/작은 텍스트 */
@@ -94,18 +104,24 @@
         --secondary-soft: #1e293b;
         --border: #334155;
         --border-strong: #475569;
-        --primary: #38bdf8;
-        --primary-strong: #0ea5e9;
+        --brand-gradient:
+          radial-gradient(120% 60% at 0% 0%, rgba(239, 68, 68, 0.45) 0%, rgba(239, 68, 68, 0) 60%),
+          linear-gradient(180deg, #450a0a 0%, #1c0606 60%, #0b0f19 100%);
+        --glass: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.14);
+        --primary: #f8fafc;
+        --primary-strong: #e2e8f0;
+        --on-primary: #0f172a;
         --success: #34d399;
         --success-strong: #10b981;
         --success-text: #34d399;
         --danger: #fb7185;
-        --tint-primary-weak: rgba(56, 189, 248, 0.08);
-        --tint-primary-soft: rgba(56, 189, 248, 0.12);
-        --tint-primary-medium: rgba(56, 189, 248, 0.16);
-        --tint-primary-strong: rgba(56, 189, 248, 0.22);
-        --tint-primary-border: rgba(56, 189, 248, 0.35);
-        --tint-primary-overlay: rgba(56, 189, 248, 0.12);
+        --tint-primary-weak: rgba(248, 250, 252, 0.05);
+        --tint-primary-soft: rgba(248, 250, 252, 0.08);
+        --tint-primary-medium: rgba(248, 250, 252, 0.08);
+        --tint-primary-strong: rgba(248, 250, 252, 0.14);
+        --tint-primary-border: rgba(248, 250, 252, 0.2);
+        --tint-primary-overlay: rgba(248, 250, 252, 0.05);
         --tint-success-bg: rgba(52, 211, 153, 0.18);
         --tint-success-border: rgba(52, 211, 153, 0.45);
         --tint-success-soft: rgba(52, 211, 153, 0.12);
@@ -121,7 +137,8 @@
         --pill-buy-bg: rgba(251, 113, 133, 0.16);
         --pill-buy-fg: #fb7185;
         --pill-buy-border: rgba(251, 113, 133, 0.35);
-        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+        --shadow-item-hover: 0 6px 18px -8px rgba(0, 0, 0, 0.6);
         --shadow-seg: 0 1px 4px rgba(0, 0, 0, 0.5);
       }
     }
@@ -130,7 +147,11 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
       background: var(--brand);
+      background-image: var(--brand-gradient);
+      background-attachment: fixed;
+      min-height: 100vh;
       color: var(--foreground);
+      -webkit-font-smoothing: antialiased;
       padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
       line-height: 1.45;
     }
@@ -162,12 +183,14 @@
       border: 1px solid var(--border);
       background: var(--secondary);
       color: var(--foreground);
-      transition: all 0.15s;
+      transition: transform 0.12s ease, background-color 0.15s, box-shadow 0.15s, opacity 0.15s;
     }
     button:hover { opacity: 0.92; }
+    button:active { transform: scale(0.97); }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .btn-primary {
       background: var(--primary);
-      color: #ffffff;
+      color: var(--on-primary);
       border-color: var(--primary-strong);
       font-weight: 700;
     }
@@ -210,7 +233,7 @@
     }
     .tab-btn.active {
       background: var(--primary);
-      color: #ffffff;
+      color: var(--on-primary);
       box-shadow: var(--shadow-tab);
     }
 
@@ -227,12 +250,16 @@
     }
     .seg-toggle {
       display: inline-flex;
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
       background: var(--secondary);
       padding: 4px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border);
     }
     .seg-btn {
+      white-space: nowrap;
       border: none;
       background: transparent;
       color: var(--muted-foreground);
@@ -245,7 +272,7 @@
       background: var(--card);
       color: var(--foreground);
       box-shadow: var(--shadow-seg);
-      border: 1px solid var(--primary);
+      border: none;
     }
 
     .toast {
@@ -354,6 +381,7 @@
       background: var(--background);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
       padding: 12px 14px;
       display: flex;
       align-items: center;
@@ -371,10 +399,10 @@
     .item-thumb {
       width: 44px;
       height: 44px;
-      border-radius: var(--radius-sm);
+      border-radius: 12px;
       flex-shrink: 0;
       object-fit: cover;
-      border: 1px solid var(--border);
+      border: none;
       background: var(--secondary-soft);
     }
     .item-info {
@@ -431,7 +459,7 @@
       align-items: center;
       gap: 12px;
     }
-    .total-price { font-size: var(--font-total); font-weight: 800; color: var(--primary); }
+    .total-price { font-size: var(--font-total); font-weight: 800; color: var(--primary); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
     /* 채팅 스타일 */
     .chat-chips {
@@ -454,7 +482,7 @@
     }
     .chip-btn.chip-active {
       background: var(--primary);
-      color: #ffffff;
+      color: var(--on-primary);
       border-color: var(--primary-strong);
       font-weight: 700;
     }
@@ -470,7 +498,7 @@
     .chat-bubble-user {
       align-self: flex-end;
       background: var(--primary);
-      color: #ffffff;
+      color: var(--on-primary);
       padding: 10px 14px;
       border-radius: 16px 16px 4px 16px;
       max-width: 85%;
@@ -521,14 +549,71 @@
     }
     .hidden { display: none !important; }
 
+    /* ── 히어로 헤더: 브랜드 배경 위에 카드 없이 직접 ── */
+    .hero {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 6px 2px 2px;
+      color: var(--on-brand);
+      align-items: flex-end;
+    }
+    .hero h1 { color: var(--on-brand); letter-spacing: -0.03em; }
+    .hero-tagline { font-size: var(--font-sub); color: var(--on-brand-soft); margin-top: 2px; font-weight: 500; }
+    .hero .sub { color: var(--on-brand-soft); }
+    .hero button {
+      background: var(--glass);
+      border-color: var(--glass-border);
+      color: var(--on-brand);
+    }
+    .hero .btn-primary {
+      background: #ffffff;
+      border-color: #ffffff;
+      color: #b91c1c;
+    }
+
+    /* ── 메인 탭: 브랜드 배경 위 글래스 세그먼트 ── */
+    .main-tabs {
+      background: var(--glass);
+      border-color: var(--glass-border);
+      border-radius: 18px;
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+    }
+    .tab-btn { color: var(--on-brand-soft); font-size: var(--font-body); border-radius: 13px; }
+    .tab-btn.active { background: var(--card); color: var(--foreground); }
+
+    /* ── 아이템 카드 마이크로 인터랙션 ── */
+    @media (hover: hover) {
+      .item-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-item-hover); border-color: var(--border-strong); }
+    }
+    .upload-box { border-radius: var(--radius-lg); transition: background-color 0.15s, border-color 0.15s; }
+    h1, .total-price { font-feature-settings: "ss01"; }
+
+    /* ── 좁은 화면(iPhone)에서 세그먼트 4개가 한 줄에 다 보이도록 ── */
+    @media (max-width: 480px) {
+      .mode-toggle-wrap .seg-toggle { display: flex; width: 100%; }
+      .seg-btn { flex: 1 1 auto; padding: 8px 6px; font-size: var(--font-small); letter-spacing: -0.02em; }
+    }
+
+    /* ── 섹션 전환 시 부드럽게 등장 ── */
+    @keyframes nuvori-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .container > .card:not(.hero) { animation: nuvori-rise 0.28s ease both; }
+    @media (prefers-reduced-motion: reduce) {
+      .container > .card, button, .item-card { animation: none !important; transition: none !important; }
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
 
     <!-- 상단 타이틀 + 장보는 날 선택 -->
-    <div class="card header-row">
-      <h1>🥦 Nuvori 장보기</h1>
+    <div class="card header-row hero">
+      <div>
+        <h1>🥦 Nuvori</h1>
+        <div class="hero-tagline">영수증 한 장으로 끝나는 장보기</div>
+      </div>
       <div class="btn-group" id="day-buttons"></div>
     </div>
 
