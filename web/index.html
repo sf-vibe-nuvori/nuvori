@@ -989,6 +989,7 @@
       text-shadow: none;
     }
     .nv-savings.is-over .nv-coin { background: var(--nv-coin-over); }
+    .nv-savings[hidden] { display: none; }
 
     /* ── 🏠 메인 화면 (Figma: Web · Home 중앙 영역의 모바일 버전) ── */
     body[data-view="home"] {
@@ -3100,7 +3101,9 @@
         var summary = computeInventorySummary();
         var hasItems = state.items.length > 0;
 
-        // 절약액 알약
+        // 절약액 알약 — 로그인한 사용자에게만 보여준다 (로그아웃 상태에선 누구의 절약인지 알 수 없음)
+        var session = window.NuvoriAuth && window.NuvoriAuth.getSession();
+        document.getElementById("nv-savings").hidden = !(session && session.user);
         document.getElementById("nv-savings-amount").textContent = (Number(summary.savedMoney) || 0).toFixed(2);
         document.querySelector("#nv-savings .nv-coin").textContent = CURRENCY_SYMBOL;
         document.getElementById("nv-savings").setAttribute("aria-label", "이번 주 절약액 " + formatMoney(summary.savedMoney));
@@ -3618,6 +3621,10 @@
         goToTab("inventory");
       });
       document.getElementById("nv-card-grocery").addEventListener("click", openShoppingList);
+      // 로그인/로그아웃 시 절약액 표시를 다시 그린다
+      if (window.NuvoriAuth && typeof window.NuvoriAuth.onChange === "function") {
+        window.NuvoriAuth.onChange(function() { renderHomeView(); });
+      }
       document.getElementById("nv-savings").addEventListener("click", function() {
         showToast("이번 주 절약액이에요. 아직 남아 있어서 다시 사지 않아도 되는 품목의 가격을 더했어요.");
       });
