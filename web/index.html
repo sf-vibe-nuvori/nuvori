@@ -1538,44 +1538,29 @@
         return JSON.parse(JSON.stringify(obj));
       }
 
-      function getDefaultItems() {
-        return [
-          { id: "eggs", name: "유기농 계란 (12구)", price: 4.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-02", cycleDays: 10, boughtDay: -9, checkedForOrder: true },
-          { id: "spinach", name: "베이비 시금치", price: 3.99, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-06", cycleDays: 5, boughtDay: -5, checkedForOrder: true },
-          { id: "milk", name: "우유 (1.89L)", price: 4.20, lastStore: "Costco", lastPurchaseDate: "2026-11-04", cycleDays: 8, boughtDay: -7, checkedForOrder: true },
-          { id: "soy_sauce", name: "양조간장", price: 6.50, lastStore: "H-Mart", lastPurchaseDate: "2026-09-17", cycleDays: 60, boughtDay: -55, checkedForOrder: true },
-          { id: "tofu", name: "찌개용 두부", price: 2.80, lastStore: "H-Mart", lastPurchaseDate: "2026-11-10", cycleDays: 8, boughtDay: -1, checkedForOrder: true },
-          { id: "ramen", name: "신라면 (5봉지)", price: 5.99, lastStore: "H-Mart", lastPurchaseDate: "2026-11-08", cycleDays: 21, boughtDay: -3, checkedForOrder: true },
-          { id: "pasta", name: "스파게티 파스타면", price: 2.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-05", cycleDays: 24, boughtDay: -6, checkedForOrder: true },
-          { id: "olive_oil", name: "엑스트라버진 올리브유", price: 11.99, lastStore: "Costco", lastPurchaseDate: "2026-11-01", cycleDays: 60, boughtDay: -10, checkedForOrder: true }
-        ];
-      }
+      // 예전 버전이 첫 실행 때 넣던 데모 품목/영수증. 새 사용자는 빈 상태로 시작하고,
+      // 이미 저장된 상태에 남아 있는 데모 데이터는 아래 stripLegacyDemoData()가 지운다.
+      // (id·이름·구매일이 모두 같을 때만 데모로 판단 — 사용자가 직접 넣은 품목은 건드리지 않음)
+      var LEGACY_DEMO_ITEMS = [
+        "eggs|유기농 계란 (12구)|2026-11-02",
+        "spinach|베이비 시금치|2026-11-06",
+        "milk|우유 (1.89L)|2026-11-04",
+        "soy_sauce|양조간장|2026-09-17",
+        "tofu|찌개용 두부|2026-11-10",
+        "ramen|신라면 (5봉지)|2026-11-08",
+        "pasta|스파게티 파스타면|2026-11-05",
+        "olive_oil|엑스트라버진 올리브유|2026-11-01"
+      ];
+      var LEGACY_DEMO_RECEIPT_IDS = ["rcpt_init_1", "rcpt_init_2"];
 
-      function getDefaultReceipts() {
-        return [
-          {
-            id: "rcpt_init_1",
-            storeName: "H-Mart",
-            purchaseDate: "2026-11-10",
-            addedItemIds: ["tofu", "ramen"],
-            prevItemMap: {},
-            items: [
-              { id: "tofu", name: "찌개용 두부", price: 2.80, cycleDays: 8 },
-              { id: "ramen", name: "신라면 (5봉지)", price: 5.99, cycleDays: 21 }
-            ]
-          },
-          {
-            id: "rcpt_init_2",
-            storeName: "Trader Joe's",
-            purchaseDate: "2026-11-06",
-            addedItemIds: ["spinach", "pasta"],
-            prevItemMap: {},
-            items: [
-              { id: "spinach", name: "베이비 시금치", price: 3.99, cycleDays: 5 },
-              { id: "pasta", name: "스파게티 파스타면", price: 2.50, cycleDays: 24 }
-            ]
-          }
-        ];
+      function stripLegacyDemoData(items, receipts) {
+        var cleanItems = items.filter(function(it) {
+          return !(it && LEGACY_DEMO_ITEMS.indexOf(it.id + "|" + it.name + "|" + it.lastPurchaseDate) !== -1);
+        });
+        var cleanReceipts = receipts.filter(function(r) {
+          return !(r && LEGACY_DEMO_RECEIPT_IDS.indexOf(r.id) !== -1);
+        });
+        return { items: cleanItems, receipts: cleanReceipts };
       }
 
       var CHAT_QUICK_PROMPTS = [
@@ -1675,7 +1660,7 @@
           var raw = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
           if (raw) {
             var parsed = JSON.parse(raw);
-            if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            if (parsed && Array.isArray(parsed.items)) {
               var persistedSubMode = parsed.subMode;
               var validSubModes = ["inventory", "buy", "receipt", "chat"];
               var persistedDayOffset = typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0;
@@ -1689,13 +1674,14 @@
                   );
                 }
               }
+              var cleaned = stripLegacyDemoData(parsed.items, Array.isArray(parsed.receipts) ? parsed.receipts : []);
               return {
                 activeTab: "home",
                 subMode: validSubModes.indexOf(persistedSubMode) !== -1 ? persistedSubMode : "inventory",
                 recipeMode: parsed.recipeMode === "chat" ? "chat" : "list",
                 dayOffset: typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0,
-                items: parsed.items,
-                receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts(),
+                items: cleaned.items,
+                receipts: cleaned.receipts,
                 pendingReceipt: null
               };
             }
@@ -1706,8 +1692,8 @@
           subMode: "inventory",    // "inventory" | "buy" | "receipt" | "chat"
           recipeMode: "list",      // "list" | "chat"
           dayOffset: 0,
-          items: getDefaultItems(),
-          receipts: getDefaultReceipts(),
+          items: [],               // 새 사용자는 빈 상태로 시작 (데모 품목 없음)
+          receipts: [],
           pendingReceipt: null     // Staged receipt waiting for user review/edit before DB commit
         };
       }
@@ -3161,13 +3147,16 @@
       // 빠른 칩 (Figma: Suggestions — 요리 시작 / 외식 / 재료 소진 / 장보기 주문)
       function renderHomeSuggestions(summary) {
         var wrap = document.getElementById("nv-suggestions");
-        var outItem = summary.shortEntries.length > 0 ? shortItemName(summary.shortEntries[0].item.name) : "계란";
         var chips = [
           { label: "요리 시작", run: function() { goToTab("recipe"); } },
-          { label: "오늘 외식해", run: function() { openHomeChat("오늘 저녁은 외식해"); } },
-          { label: outItem + " 다 떨어졌어", run: function() { openHomeChat(outItem + " 다 떨어졌어"); } },
-          { label: "장보기 주문", run: function() { openShoppingList(); showToast("자동 주문은 준비 중이에요. 우선 장보기 목록을 보여 드릴게요."); } }
+          { label: "오늘 외식해", run: function() { openHomeChat("오늘 저녁은 외식해"); } }
         ];
+        // 재료 소진 칩은 실제로 떨어져 가는 품목이 있을 때만 (빈 상태에서 가짜 예시를 보여주지 않음)
+        if (summary.shortEntries.length > 0) {
+          var outItem = shortItemName(summary.shortEntries[0].item.name);
+          chips.push({ label: outItem + " 다 떨어졌어", run: function() { openHomeChat(outItem + " 다 떨어졌어"); } });
+        }
+        chips.push({ label: "장보기 주문", run: function() { openShoppingList(); showToast("자동 주문은 준비 중이에요. 우선 장보기 목록을 보여 드릴게요."); } });
         wrap.replaceChildren();
         chips.forEach(function(chip) {
           var btn = el("button", "nv-pill", chip.label);
