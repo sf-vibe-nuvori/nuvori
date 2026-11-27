@@ -604,50 +604,7 @@
     .tab-btn.active { background: var(--card); color: var(--foreground); box-shadow: var(--shadow-seg); }
     .nav-days .btn-sm { border-radius: var(--radius-pill); }
 
-    /* ── 계정 (Google 로그인) ── */
-    .nav-auth { display: flex; align-items: center; }
-    .auth-google-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: var(--radius-pill);
-      padding: 7px 14px 7px 8px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      font-size: var(--font-sub);
-      font-weight: 700;
-    }
-    .auth-g {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--secondary);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 13px;
-      color: var(--primary-strong);
-    }
-    .auth-label-short { display: none; }
-    .auth-user { display: inline-flex; align-items: center; gap: 8px; }
-    .auth-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: var(--secondary-soft);
-      flex-shrink: 0;
-    }
-    .auth-avatar-fallback {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      color: var(--foreground);
-    }
-    .auth-name { font-size: var(--font-sub); font-weight: 700; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .auth-logout { border-radius: var(--radius-pill); }
+    /* 계정(Google 로그인) 스타일은 web/auth.css 로 분리됨 */
 
     /* ── 아이템 카드 마이크로 인터랙션 ── */
     @media (hover: hover) {
@@ -883,9 +840,6 @@
       body[data-view="inventory"] .nav-logo-text, body[data-view="recipe"] .nav-logo-text { display: none; }
       body[data-view="home"] .main-tabs { display: none; }
       .nav-days { order: 3; width: 100%; }
-      .nav-auth { order: 2; }
-      .auth-label-long, .auth-name { display: none; }
-      .auth-label-short { display: inline; }
       .route-card .preview-list > :nth-child(n+3) { display: none; }
     }
     @media (max-width: 719px) {
@@ -944,6 +898,8 @@
     }
 
   </style>
+  <!-- 계정 UI (로그인 시트 + 상단 계정 칩) — index.html 디자인 교체와 독립적으로 유지 -->
+  <link rel="stylesheet" href="auth.css">
 </head>
 <body>
   <!-- v2 상단 내비게이션: 로고(→ 🏠 홈) + 메인 탭 2개 + 시점 선택 -->
