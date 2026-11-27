@@ -45,4 +45,4 @@ git push origin main
 
 1. **API Key 하드코딩 절대 금지**: `GEMINI_API_KEY`는 오직 `api/*.mjs`의 `process.env.GEMINI_API_KEY`에서만 읽는다. 클라이언트 코드(web/, packages/, mobile/)에 키나 키 입력창을 노출하지 않는다.
 2. **XSS 방지**: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` 금지. `document.createElement()`, `textContent`, `replaceChildren()`만 사용.
-3. UI/UX 단순성 규칙(3종 배지, 게이지바 금지 등)의 전문은 `web/CLAUDE.md`를 따른다.
+3. UI/UX 규칙(디자인 기준 = Figma "Nuvori — Home JL Edit", 라이트/다크 자동 전환, 한국어 UI)의 전문은 `web/CLAUDE.md`를 따른다.
