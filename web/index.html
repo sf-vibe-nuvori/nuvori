@@ -6,8 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Nuvori" />
-  <meta name="theme-color" content="#FBF7F0" />
+  <meta name="theme-color" content="#F8F6F2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0E0C26" media="(prefers-color-scheme: dark)" />
+  <meta name="color-scheme" content="light dark" />
   <link rel="manifest" href="manifest.json" />
+  <!-- 글꼴: Pretendard (한글, Figma Inter 대응) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <title>Nuvori — 스마트 장보기</title>
   <style>
     /* ================================================================
@@ -604,6 +608,8 @@
     .tab-btn.active { background: var(--card); color: var(--foreground); box-shadow: var(--shadow-seg); }
     .nav-days .btn-sm { border-radius: var(--radius-pill); }
 
+    /* 계정(Google 로그인) 스타일은 web/auth.css 로 분리됨 */
+
     /* ── 아이템 카드 마이크로 인터랙션 ── */
     @media (hover: hover) {
       .item-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-item-hover); border-color: var(--border-strong); }
@@ -673,57 +679,6 @@
     }
     .fchip.active { background: var(--foreground); color: var(--card); }
 
-    /* ── 🏠 홈 라우터 ── */
-    .router-split { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    .route-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 19px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      cursor: pointer;
-      min-width: 0;
-      transition: box-shadow 0.15s ease, transform 0.15s ease;
-    }
-    .route-card.route-inv { background: var(--secondary); }
-    @media (hover: hover) {
-      .route-card:hover { box-shadow: var(--shadow-item-hover); }
-    }
-    .route-title-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .route-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-    .teaser { background: var(--card); border-radius: 18px; padding: 14px 18px; }
-    .route-rcp .teaser { background: var(--secondary); }
-    .teaser-big { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; }
-    .teaser-big.saved { color: var(--success-text); }
-    .teaser-sub { font-size: var(--font-small); color: var(--muted-foreground); margin-top: 2px; }
-    .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .stat { background: var(--card); border-radius: 16px; padding: 12px 14px; }
-    .stat-num { font-size: 22px; font-weight: 800; line-height: 1.2; }
-    .stat-label { font-size: var(--font-small); color: var(--muted-foreground); }
-    .preview-list { display: flex; flex-direction: column; gap: 10px; }
-    .route-card .item-card { background: var(--card); border-color: transparent; border-radius: 16px; }
-    .preview-row {
-      background: var(--background);
-      border-radius: 16px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .route-rcp .preview-row { background: var(--card); border: 1px solid var(--border); }
-    .thumb-emoji {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius-sm);
-      background: var(--secondary-soft);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
     .preview-empty { padding: 14px; text-align: center; }
 
     /* ── 🥬 인벤토리: 절약 밴드 ── */
@@ -838,7 +793,6 @@
       body[data-view="inventory"] .nav-logo-text, body[data-view="recipe"] .nav-logo-text { display: none; }
       body[data-view="home"] .main-tabs { display: none; }
       .nav-days { order: 3; width: 100%; }
-      .route-card .preview-list > :nth-child(n+3) { display: none; }
     }
     @media (max-width: 719px) {
       .cons-th { display: none; }
@@ -871,11 +825,6 @@
       .container { padding: 28px 40px 0; gap: 20px; }
       .page-title { font-size: 30px; }
       .page-sub { font-size: var(--font-body); }
-      .router-split { grid-template-columns: 1fr 1fr; gap: 24px; }
-      .route-card { padding: 32px; gap: 18px; }
-      .route-title { font-size: 28px; }
-      .teaser { padding: 16px 20px; }
-      .teaser-big { font-size: 26px; }
       .savings-band { padding: 20px 28px; }
       .savings-amount { font-size: 32px; }
       .band-divider { display: block; }
@@ -896,6 +845,355 @@
     }
 
   </style>
+
+  <!-- ================================================================
+       ✨ Nuvori 디자인 시스템 — Figma "Nuvori — Home JL Edit" (web/CLAUDE.md §4)
+       라이트 = Set 2 · Ivory gloss / 다크 = Set 1 · Clear glass (기기 설정 자동 전환)
+       새 화면은 이 블록의 --nv-* 토큰만 사용한다. (구 v2 토큰은 아직 이전 전 화면용)
+       ================================================================ -->
+  <style>
+    :root {
+      --nv-font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+      --nv-wallpaper: url("assets/wallpaper-pearl.svg");
+      --nv-wallpaper-base: #f8f6f2;
+
+      --nv-fg: #3d301b;
+      --nv-fg-soft: rgba(61, 48, 27, 0.8);
+      --nv-fg-faint: rgba(61, 48, 27, 0.7);
+      --nv-text-shadow: none;
+
+      --nv-glass-bg:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 30%),
+        linear-gradient(180deg, rgba(248, 239, 221, 0.66) 0%, rgba(241, 228, 203, 0.62) 100%);
+      --nv-glass-border: 1.5px solid #ffffff;
+      --nv-glass-shadow: 0 16px 40px rgba(77, 54, 26, 0.26), inset 0 4px 15px 5px rgba(255, 255, 255, 0.8);
+      --nv-glass-blur: none;
+
+      --nv-fill: rgba(255, 255, 255, 0.55);
+      --nv-fill-press: rgba(255, 255, 255, 0.8);
+      --nv-selected-bg: #e8d7b4;
+      --nv-selected-border: #d6c196;
+      --nv-selected-fg: #4a3a20;
+
+      --nv-mic-bg: #3d301b;
+      --nv-mic-fg: #fbf5ea;
+      --nv-coin: #1cb073;
+      --nv-coin-over: #e5484d;
+      --nv-focus: #b4925a;
+
+      --nv-mascot: url("assets/nuvori-mascot-light.png");
+      --nv-mascot-glow: radial-gradient(closest-side, rgba(255, 244, 222, 0.9), rgba(255, 244, 222, 0));
+
+      --nv-r-sheet: 36px;
+      --nv-r-composer: 30px;
+      --nv-r-card: 22px;
+      --nv-r-tile: 14px;
+      --nv-r-pill: 999px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --nv-wallpaper: url("assets/wallpaper-aurora.svg");
+        --nv-wallpaper-base: #0e0c26;
+
+        --nv-fg: #ffffff;
+        --nv-fg-soft: rgba(255, 255, 255, 0.88);
+        --nv-fg-faint: rgba(255, 255, 255, 0.7);
+        --nv-text-shadow: 0 1px 3px rgba(13, 5, 31, 0.45);
+
+        --nv-glass-bg: rgba(255, 255, 255, 0.16);
+        --nv-glass-border: 1px solid rgba(255, 255, 255, 0.55);
+        --nv-glass-shadow: 0 8px 24px rgba(31, 5, 51, 0.18);
+        --nv-glass-blur: blur(24px) saturate(140%);
+
+        --nv-fill: rgba(255, 255, 255, 0.12);
+        --nv-fill-press: rgba(255, 255, 255, 0.22);
+        --nv-selected-bg: #ffffff;
+        --nv-selected-border: #ffffff;
+        --nv-selected-fg: #291f3d;
+
+        --nv-mic-bg: #ffffff;
+        --nv-mic-fg: #1f9e86;
+        --nv-focus: #8cffe0;
+
+        --nv-mascot: url("assets/nuvori-mascot-dark.png");
+        --nv-mascot-glow: radial-gradient(closest-side, rgba(140, 255, 224, 0.35), rgba(140, 255, 224, 0));
+      }
+    }
+
+    /* ── 공용: 아이콘 (Figma 라인 아이콘을 mask로 — 색은 currentColor) ── */
+    .nv-icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      background-color: currentColor;
+      -webkit-mask: var(--nv-icon-src) center / contain no-repeat;
+      mask: var(--nv-icon-src) center / contain no-repeat;
+    }
+    .nv-icon-mic { --nv-icon-src: url("assets/icons/mic.svg"); }
+    .nv-icon-utensils { --nv-icon-src: url("assets/icons/utensils.svg"); }
+    .nv-icon-jar { --nv-icon-src: url("assets/icons/jar.svg"); }
+    .nv-icon-cart { --nv-icon-src: url("assets/icons/cart.svg"); }
+
+    /* ── 공용: 유리 면 / 알약 ── */
+    .nv-glass {
+      position: relative;
+      background: var(--nv-glass-bg);
+      border: var(--nv-glass-border);
+      box-shadow: var(--nv-glass-shadow);
+      -webkit-backdrop-filter: var(--nv-glass-blur);
+      backdrop-filter: var(--nv-glass-blur);
+    }
+    .nv-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      border-radius: var(--nv-r-pill);
+      background: var(--nv-fill);
+      color: var(--nv-fg);
+      font: 600 13px/1.2 var(--nv-font);
+      padding: 9px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+    .nv-pill:active { background: var(--nv-fill-press); transform: scale(0.97); }
+    .nv-pill:focus-visible,
+    .nv-card:focus-visible,
+    .nv-mic:focus-visible,
+    .nv-attach:focus-visible,
+    .nv-savings:focus-visible { outline: 3px solid var(--nv-focus); outline-offset: 2px; }
+
+    /* 절약액 알약 (Figma: Savings pill / Savings pill / Over) */
+    .nv-savings {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      background: transparent;
+      color: var(--nv-fg);
+      font: 600 15px/1 var(--nv-font);
+      text-shadow: var(--nv-text-shadow);
+      cursor: pointer;
+      padding: 6px 2px;
+    }
+    .nv-coin {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: var(--nv-coin);
+      color: #fff;
+      font: 700 11px/19px var(--nv-font);
+      text-align: center;
+      text-shadow: none;
+    }
+    .nv-savings.is-over .nv-coin { background: var(--nv-coin-over); }
+    .nv-savings[hidden] { display: none; }
+
+    /* ── 🏠 메인 화면 (Figma: Web · Home 중앙 영역의 모바일 버전) ── */
+    body[data-view="home"] {
+      background: var(--nv-wallpaper-base) var(--nv-wallpaper) center top / cover no-repeat fixed;
+      font-family: var(--nv-font);
+    }
+    body[data-view="home"] .topnav { display: none; }
+
+    .nv-home {
+      max-width: 480px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--nv-fg);
+      font-family: var(--nv-font);
+    }
+    .nv-home-top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 40px;
+    }
+    .nv-home-top .nav-auth { min-width: 0; }
+
+    .nv-welcome { text-align: center; margin-top: 12px; }
+    .nv-mascot {
+      position: relative;
+      width: 120px;
+      height: 150px;
+      margin: 0 auto;
+    }
+    .nv-mascot::before {
+      content: "";
+      position: absolute;
+      inset: 10px -20px 0;
+      background: var(--nv-mascot-glow);
+    }
+    .nv-mascot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--nv-mascot) center / contain no-repeat;
+      animation: nv-float 4.5s ease-in-out infinite;
+    }
+    @keyframes nv-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nv-mascot::after { animation: none; }
+    }
+    .nv-title {
+      margin-top: 14px;
+      font: 700 28px/1.25 var(--nv-font);
+      letter-spacing: -0.02em;
+      text-shadow: var(--nv-text-shadow);
+      word-break: keep-all;
+    }
+    .nv-subtitle {
+      margin-top: 10px;
+      font: 500 15px/1.45 var(--nv-font);
+      color: var(--nv-fg-soft);
+      text-shadow: var(--nv-text-shadow);
+      word-break: keep-all;
+    }
+
+    /* 입력창 (Figma: Composer) */
+    .nv-composer {
+      width: 100%;
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 8px 8px 10px;
+      border-radius: var(--nv-r-composer);
+    }
+    .nv-attach {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border: 0;
+      border-radius: 20px;
+      background: var(--nv-fill);
+      color: var(--nv-fg);
+      font: 500 22px/1 var(--nv-font);
+      cursor: pointer;
+    }
+    .nv-composer input.nv-composer-input {
+      flex: 1;
+      min-width: 0;
+      height: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+      color: var(--nv-fg);
+      font: 400 16px/1.3 var(--nv-font); /* iOS 줌인 방지: 16px 이상 */
+    }
+    .nv-composer-input::placeholder { color: var(--nv-fg-faint); }
+    .nv-mic {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border: 0;
+      border-radius: 22px;
+      background: var(--nv-mic-bg);
+      color: var(--nv-mic-fg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .nv-mic:active { transform: scale(0.94); }
+    .nv-mic.is-listening { box-shadow: 0 0 0 6px rgba(28, 176, 115, 0.25), 0 0 18px rgba(140, 255, 224, 0.55); }
+
+    /* 빠른 칩 (Figma: Suggestions) */
+    .nv-suggestions {
+      width: 100%;
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* 오늘 카드 3개 (Figma: Today) — 모바일은 세로로 쌓는다 */
+    .nv-today {
+      width: 100%;
+      margin-top: 28px;
+      display: grid;
+      gap: 12px;
+    }
+    .nv-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 16px;
+      border-radius: var(--nv-r-card);
+      color: var(--nv-fg);
+      font-family: var(--nv-font);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .nv-card:active { transform: scale(0.985); }
+    .nv-card-icon {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      border-radius: var(--nv-r-tile);
+      background: var(--nv-fill);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .nv-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .nv-card-label {
+      font: 700 11px/1.2 var(--nv-font);
+      letter-spacing: 0.04em;
+      color: var(--nv-fg-soft);
+    }
+    .nv-card-title {
+      font: 600 17px/1.3 var(--nv-font);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nv-card-sub {
+      font: 500 13px/1.35 var(--nv-font);
+      color: var(--nv-fg-soft);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nv-chevron {
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+      margin-right: 4px;
+      border-top: 2px solid var(--nv-fg-faint);
+      border-right: 2px solid var(--nv-fg-faint);
+      transform: rotate(45deg);
+    }
+
+    @media (min-width: 720px) {
+      .nv-home { max-width: 760px; }
+      .nv-title { font-size: 40px; }
+      .nv-subtitle { font-size: 18px; }
+      .nv-suggestions { justify-content: center; }
+      .nv-today { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+      .nv-card { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .nv-card-icon { width: auto; height: auto; background: none; }
+      .nv-chevron { display: none; }
+    }
+  </style>
+  <!-- 계정 UI (로그인 시트 + 상단 계정 칩) — index.html 디자인 교체와 독립적으로 유지 -->
+  <link rel="stylesheet" href="auth.css">
 </head>
 <body>
   <!-- v2 상단 내비게이션: 로고(→ 🏠 홈) + 메인 탭 2개 + 시점 선택 -->
@@ -914,6 +1212,9 @@
       </div>
 
       <div class="btn-group nav-days" id="day-buttons"></div>
+
+      <!-- 계정: Google 로그인 / 사용자 (web/auth.js 가 렌더) -->
+      <div id="auth-slot" class="nav-auth"></div>
     </div>
   </header>
 
@@ -921,47 +1222,65 @@
 
     <div id="toast" class="toast"></div>
 
-    <!-- SECTION 0: 🏠 홈 라우터 (인벤토리 / 레시피 2분할) -->
+    <!-- SECTION 0: 🏠 메인 화면 — Figma "Nuvori — Home JL Edit" · Web · Home 중앙 영역의 모바일 버전 (web/CLAUDE.md §1) -->
     <div id="view-home" class="view hidden">
-      <div class="page-header">
-        <div>
-          <div id="home-greeting" class="page-title">안녕하세요 👋</div>
-          <div class="page-sub">오늘은 뭐 해먹을까요?</div>
-        </div>
-      </div>
-
-      <div class="router-split">
-        <div id="route-card-inventory" class="route-card route-inv" role="button" tabindex="0">
-          <div class="route-title-row">
-            <div class="route-title">🥬 인벤토리</div>
-            <button type="button" class="btn-pill btn-primary">열기 →</button>
-          </div>
-          <div class="teaser">
-            <div id="home-saved" class="teaser-big saved">$0.00 절약</div>
-            <div id="home-saved-sub" class="teaser-sub"></div>
-          </div>
-          <div class="stat-row">
-            <div class="stat"><div id="home-stat-items" class="stat-num">0</div><div class="stat-label">전체 품목</div></div>
-            <div class="stat"><div id="home-stat-short" class="stat-num">0</div><div class="stat-label">⚠️ 부족</div></div>
-            <div class="stat"><div id="home-stat-ok" class="stat-num">0</div><div class="stat-label">✅ 충분</div></div>
-          </div>
-          <div class="section-label">곧 떨어져요</div>
-          <div id="home-short-list" class="preview-list"></div>
+      <main class="nv-home" aria-labelledby="nv-home-title">
+        <div class="nv-home-top">
+          <!-- 홈에 있을 때 계정 칩(#auth-slot)이 여기로 옮겨진다 (renderAll) -->
+          <div id="nv-auth-dock"></div>
+          <button id="nv-savings" type="button" class="nv-savings" aria-label="이번 주 절약액">
+            <span class="nv-coin" aria-hidden="true">$</span>
+            <span id="nv-savings-amount">0.00</span>
+          </button>
         </div>
 
-        <div id="route-card-recipe" class="route-card route-rcp" role="button" tabindex="0">
-          <div class="route-title-row">
-            <div class="route-title">🍳 레시피</div>
-            <button type="button" class="btn-pill btn-primary">열기 →</button>
-          </div>
-          <div class="teaser">
-            <div id="home-recipe-count" class="teaser-big">지금 만들 수 있는 요리 0개</div>
-            <div class="teaser-sub">지금 집에 있는 재료만으로</div>
-          </div>
-          <div class="section-label">오늘의 추천</div>
-          <div id="home-recipe-picks" class="preview-list"></div>
-        </div>
-      </div>
+        <section class="nv-welcome">
+          <div class="nv-mascot" role="img" aria-label="누보리"></div>
+          <h1 id="nv-home-title" class="nv-title">오늘 저녁 뭐 해 먹을까요?</h1>
+          <p id="nv-home-sub" class="nv-subtitle"></p>
+        </section>
+
+        <form id="nv-composer" class="nv-composer nv-glass" autocomplete="off">
+          <button id="nv-attach" type="button" class="nv-attach" aria-label="영수증 추가">+</button>
+          <input id="nv-composer-input" class="nv-composer-input" type="text" enterkeyhint="send"
+                 placeholder="누보리에게 말하거나 입력하세요…" aria-label="누보리에게 메시지" />
+          <button id="nv-mic" type="button" class="nv-mic" aria-label="말로 하기">
+            <span class="nv-icon nv-icon-mic" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div id="nv-suggestions" class="nv-suggestions" aria-label="빠른 요청"></div>
+
+        <section class="nv-today" aria-label="오늘">
+          <button id="nv-card-tonight" type="button" class="nv-card nv-glass">
+            <span class="nv-card-icon"><span class="nv-icon nv-icon-utensils" aria-hidden="true"></span></span>
+            <span class="nv-card-body">
+              <span class="nv-card-label">오늘 저녁</span>
+              <span id="nv-tonight-title" class="nv-card-title"></span>
+              <span id="nv-tonight-sub" class="nv-card-sub"></span>
+            </span>
+            <span class="nv-chevron" aria-hidden="true"></span>
+          </button>
+          <button id="nv-card-usesoon" type="button" class="nv-card nv-glass">
+            <span class="nv-card-icon"><span class="nv-icon nv-icon-jar" aria-hidden="true"></span></span>
+            <span class="nv-card-body">
+              <span class="nv-card-label">빨리 써야 해요</span>
+              <span id="nv-usesoon-title" class="nv-card-title"></span>
+              <span id="nv-usesoon-sub" class="nv-card-sub"></span>
+            </span>
+            <span class="nv-chevron" aria-hidden="true"></span>
+          </button>
+          <button id="nv-card-grocery" type="button" class="nv-card nv-glass">
+            <span class="nv-card-icon"><span class="nv-icon nv-icon-cart" aria-hidden="true"></span></span>
+            <span class="nv-card-body">
+              <span class="nv-card-label">장보기</span>
+              <span id="nv-grocery-title" class="nv-card-title"></span>
+              <span id="nv-grocery-sub" class="nv-card-sub"></span>
+            </span>
+            <span class="nv-chevron" aria-hidden="true"></span>
+          </button>
+        </section>
+      </main>
     </div>
 
     <!-- SECTION 1: 🥬 인벤토리 (인벤토리 · 쇼핑 리스트 · 영수증 · 장보기 챗) -->
@@ -1121,6 +1440,9 @@
        배포 시 web/ 디렉토리로 복사됨 (netlify.toml의 build command 참조) -->
   <script src="hsmm-engine.js"></script>
   <script src="api-client.js"></script>
+  <!-- 계정 연동: supabase-js (CDN, 공개 키만 사용) + web/auth.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
 
   <script>
     (function() {
@@ -1216,44 +1538,29 @@
         return JSON.parse(JSON.stringify(obj));
       }
 
-      function getDefaultItems() {
-        return [
-          { id: "eggs", name: "유기농 계란 (12구)", price: 4.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-02", cycleDays: 10, boughtDay: -9, checkedForOrder: true },
-          { id: "spinach", name: "베이비 시금치", price: 3.99, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-06", cycleDays: 5, boughtDay: -5, checkedForOrder: true },
-          { id: "milk", name: "우유 (1.89L)", price: 4.20, lastStore: "Costco", lastPurchaseDate: "2026-11-04", cycleDays: 8, boughtDay: -7, checkedForOrder: true },
-          { id: "soy_sauce", name: "양조간장", price: 6.50, lastStore: "H-Mart", lastPurchaseDate: "2026-09-17", cycleDays: 60, boughtDay: -55, checkedForOrder: true },
-          { id: "tofu", name: "찌개용 두부", price: 2.80, lastStore: "H-Mart", lastPurchaseDate: "2026-11-10", cycleDays: 8, boughtDay: -1, checkedForOrder: true },
-          { id: "ramen", name: "신라면 (5봉지)", price: 5.99, lastStore: "H-Mart", lastPurchaseDate: "2026-11-08", cycleDays: 21, boughtDay: -3, checkedForOrder: true },
-          { id: "pasta", name: "스파게티 파스타면", price: 2.50, lastStore: "Trader Joe's", lastPurchaseDate: "2026-11-05", cycleDays: 24, boughtDay: -6, checkedForOrder: true },
-          { id: "olive_oil", name: "엑스트라버진 올리브유", price: 11.99, lastStore: "Costco", lastPurchaseDate: "2026-11-01", cycleDays: 60, boughtDay: -10, checkedForOrder: true }
-        ];
-      }
+      // 예전 버전이 첫 실행 때 넣던 데모 품목/영수증. 새 사용자는 빈 상태로 시작하고,
+      // 이미 저장된 상태에 남아 있는 데모 데이터는 아래 stripLegacyDemoData()가 지운다.
+      // (id·이름·구매일이 모두 같을 때만 데모로 판단 — 사용자가 직접 넣은 품목은 건드리지 않음)
+      var LEGACY_DEMO_ITEMS = [
+        "eggs|유기농 계란 (12구)|2026-11-02",
+        "spinach|베이비 시금치|2026-11-06",
+        "milk|우유 (1.89L)|2026-11-04",
+        "soy_sauce|양조간장|2026-09-17",
+        "tofu|찌개용 두부|2026-11-10",
+        "ramen|신라면 (5봉지)|2026-11-08",
+        "pasta|스파게티 파스타면|2026-11-05",
+        "olive_oil|엑스트라버진 올리브유|2026-11-01"
+      ];
+      var LEGACY_DEMO_RECEIPT_IDS = ["rcpt_init_1", "rcpt_init_2"];
 
-      function getDefaultReceipts() {
-        return [
-          {
-            id: "rcpt_init_1",
-            storeName: "H-Mart",
-            purchaseDate: "2026-11-10",
-            addedItemIds: ["tofu", "ramen"],
-            prevItemMap: {},
-            items: [
-              { id: "tofu", name: "찌개용 두부", price: 2.80, cycleDays: 8 },
-              { id: "ramen", name: "신라면 (5봉지)", price: 5.99, cycleDays: 21 }
-            ]
-          },
-          {
-            id: "rcpt_init_2",
-            storeName: "Trader Joe's",
-            purchaseDate: "2026-11-06",
-            addedItemIds: ["spinach", "pasta"],
-            prevItemMap: {},
-            items: [
-              { id: "spinach", name: "베이비 시금치", price: 3.99, cycleDays: 5 },
-              { id: "pasta", name: "스파게티 파스타면", price: 2.50, cycleDays: 24 }
-            ]
-          }
-        ];
+      function stripLegacyDemoData(items, receipts) {
+        var cleanItems = items.filter(function(it) {
+          return !(it && LEGACY_DEMO_ITEMS.indexOf(it.id + "|" + it.name + "|" + it.lastPurchaseDate) !== -1);
+        });
+        var cleanReceipts = receipts.filter(function(r) {
+          return !(r && LEGACY_DEMO_RECEIPT_IDS.indexOf(r.id) !== -1);
+        });
+        return { items: cleanItems, receipts: cleanReceipts };
       }
 
       var CHAT_QUICK_PROMPTS = [
@@ -1353,7 +1660,7 @@
           var raw = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
           if (raw) {
             var parsed = JSON.parse(raw);
-            if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            if (parsed && Array.isArray(parsed.items)) {
               var persistedSubMode = parsed.subMode;
               var validSubModes = ["inventory", "buy", "receipt", "chat"];
               var persistedDayOffset = typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0;
@@ -1367,13 +1674,14 @@
                   );
                 }
               }
+              var cleaned = stripLegacyDemoData(parsed.items, Array.isArray(parsed.receipts) ? parsed.receipts : []);
               return {
                 activeTab: "home",
                 subMode: validSubModes.indexOf(persistedSubMode) !== -1 ? persistedSubMode : "inventory",
                 recipeMode: parsed.recipeMode === "chat" ? "chat" : "list",
                 dayOffset: typeof parsed.dayOffset === "number" ? parsed.dayOffset : 0,
-                items: parsed.items,
-                receipts: Array.isArray(parsed.receipts) ? parsed.receipts : getDefaultReceipts(),
+                items: cleaned.items,
+                receipts: cleaned.receipts,
                 pendingReceipt: null
               };
             }
@@ -1384,8 +1692,8 @@
           subMode: "inventory",    // "inventory" | "buy" | "receipt" | "chat"
           recipeMode: "list",      // "list" | "chat"
           dayOffset: 0,
-          items: getDefaultItems(),
-          receipts: getDefaultReceipts(),
+          items: [],               // 새 사용자는 빈 상태로 시작 (데모 품목 없음)
+          receipts: [],
           pendingReceipt: null     // Staged receipt waiting for user review/edit before DB commit
         };
       }
@@ -2728,14 +3036,18 @@
       }
 
       // ====================================================================
-      // 🏠 홈 라우터 (인벤토리 / 레시피 미리보기)
+      // 🏠 메인 화면 (Figma "Nuvori — Home JL Edit" · web/CLAUDE.md §1 화면 1)
       // ====================================================================
-      function getGreeting() {
-        var h = new Date().getHours();
-        if (h < 5) return "늦은 밤이에요 🌙";
-        if (h < 11) return "좋은 아침이에요 ☀️";
-        if (h < 17) return "좋은 오후예요 👋";
-        return "좋은 저녁이에요 👋";
+      // 통화: 현재 데이터(영수증·기본 품목)가 달러 기준이라 표시도 달러로 한다.
+      // 원화 전환은 데이터 계약(inventory-state)과 함께 바꿔야 하므로 이 상수 하나로 모아 둔다.
+      var CURRENCY_SYMBOL = "$";
+      function formatMoney(amount) {
+        return CURRENCY_SYMBOL + (Number(amount) || 0).toFixed(2);
+      }
+
+      // "유기농 계란 (12구)" → "유기농 계란"
+      function shortItemName(name) {
+        return String(name || "").replace(/\s*\([^)]*\)\s*/g, " ").trim();
       }
 
       function getSortedRecipeMatches() {
@@ -2744,53 +3056,178 @@
         return matches;
       }
 
-      function createRecipePreviewRow(match) {
-        var row = el("div", "preview-row");
-        row.appendChild(el("div", "thumb-emoji", match.recipe.emoji));
-        var info = el("div", "item-info");
-        info.appendChild(el("div", "item-name", match.recipe.name));
-        info.appendChild(el("div", "item-days", describeRecipeMatch(match)));
-        row.appendChild(info);
-        row.appendChild(createRecipeStatusPill(match));
-        return row;
+      function getTonightPick() {
+        var matches = getSortedRecipeMatches();
+        return matches.length > 0 ? matches[0] : null;
+      }
+
+      // 빨리 써야 하는 품목: 아직 부족하지 않은 신선 식품(주기 14일 이하) 중 남은 날이 적은 순
+      function getUseSoonEntries(summary) {
+        return summary.okEntries
+          .filter(function(e) { return (Number(e.item.cycleDays) || 0) <= 14; })
+          .map(function(e) {
+            return { item: e.item, daysLeft: Math.max(0, Math.round(e.item.cycleDays * 0.75) - e.ev.elapsed) };
+          })
+          .sort(function(a, b) { return a.daysLeft - b.daysLeft; });
+      }
+
+      function mostCommonStore(entries) {
+        var counts = {};
+        var best = "";
+        entries.forEach(function(e) {
+          var store = e.item.lastStore;
+          if (!store) return;
+          counts[store] = (counts[store] || 0) + 1;
+          if (!best || counts[store] > counts[best]) best = store;
+        });
+        return best;
       }
 
       function renderHomeView() {
         var summary = computeInventorySummary();
-        var receiptCount = Array.isArray(state.receipts) ? state.receipts.length : 0;
+        var hasItems = state.items.length > 0;
 
-        document.getElementById("home-greeting").textContent = getGreeting();
-        document.getElementById("home-saved").textContent = "$" + summary.savedMoney.toFixed(2) + " 절약";
-        document.getElementById("home-saved-sub").textContent =
-          "영수증 " + receiptCount + "건 기준 · 안 사도 되는 품목 " + summary.okEntries.length + "개";
-        document.getElementById("home-stat-items").textContent = String(state.items.length);
-        document.getElementById("home-stat-short").textContent = String(summary.shortEntries.length);
-        document.getElementById("home-stat-ok").textContent = String(summary.okEntries.length);
+        // 절약액 알약 — 로그인한 사용자에게만 보여준다 (로그아웃 상태에선 누구의 절약인지 알 수 없음)
+        var session = window.NuvoriAuth && window.NuvoriAuth.getSession();
+        document.getElementById("nv-savings").hidden = !(session && session.user);
+        document.getElementById("nv-savings-amount").textContent = (Number(summary.savedMoney) || 0).toFixed(2);
+        document.querySelector("#nv-savings .nv-coin").textContent = CURRENCY_SYMBOL;
+        document.getElementById("nv-savings").setAttribute("aria-label", "이번 주 절약액 " + formatMoney(summary.savedMoney));
 
-        var shortList = document.getElementById("home-short-list");
-        shortList.replaceChildren();
-        if (summary.shortEntries.length === 0) {
-          shortList.appendChild(el("div", "sub preview-empty",
-            state.items.length === 0 ? "영수증을 올리면 여기에 곧 떨어질 재료가 보여요." : "지금은 부족한 재료가 없어요 🎉"));
+        // 오늘 저녁
+        var pick = hasItems ? getTonightPick() : null;
+        var sub = document.getElementById("nv-home-sub");
+        var tonightTitle = document.getElementById("nv-tonight-title");
+        var tonightSub = document.getElementById("nv-tonight-sub");
+        if (!pick) {
+          sub.textContent = "영수증을 올려 주면 오늘 저녁을 골라 드릴게요.";
+          tonightTitle.textContent = "아직 고를 재료가 없어요";
+          tonightSub.textContent = "영수증을 추가해 주세요";
+        } else if (pick.missing.length === 0) {
+          sub.textContent = "오늘 저녁은 " + pick.recipe.name + " 어때요? 재료가 다 있어요.";
+          tonightTitle.textContent = pick.recipe.name;
+          tonightSub.textContent = "재료가 다 있어요";
         } else {
-          for (var i = 0; i < Math.min(3, summary.shortEntries.length); i++) {
-            shortList.appendChild(createInventoryItemCard(summary.shortEntries[i].item, summary.shortEntries[i].ev));
-          }
+          var missingNames = pick.missing.map(function(m) { return m.name; });
+          sub.textContent = "오늘 저녁은 " + pick.recipe.name + " 어때요? " + missingNames.join(", ") + "만 있으면 돼요.";
+          tonightTitle.textContent = pick.recipe.name;
+          tonightSub.textContent = missingNames.join(", ") + " 필요해요";
         }
 
-        var matches = getSortedRecipeMatches();
-        var makeable = matches.filter(function(m) { return m.missing.length === 0; }).length;
-        document.getElementById("home-recipe-count").textContent = "지금 만들 수 있는 요리 " + makeable + "개";
-
-        var picks = document.getElementById("home-recipe-picks");
-        picks.replaceChildren();
-        if (state.items.length === 0) {
-          picks.appendChild(el("div", "sub preview-empty", "재료가 등록되면 오늘 만들 요리를 골라드려요."));
+        // 빨리 써야 해요
+        var useSoon = getUseSoonEntries(summary);
+        var useSoonTitle = document.getElementById("nv-usesoon-title");
+        var useSoonSub = document.getElementById("nv-usesoon-sub");
+        if (useSoon.length === 0) {
+          useSoonTitle.textContent = hasItems ? "급한 재료가 없어요" : "재료를 기다리고 있어요";
+          useSoonSub.textContent = hasItems ? "여유 있게 드셔도 돼요" : "영수증을 올리면 알려 드릴게요";
         } else {
-          for (var p = 0; p < Math.min(4, matches.length); p++) {
-            picks.appendChild(createRecipePreviewRow(matches[p]));
-          }
+          useSoonTitle.textContent = useSoon.slice(0, 3).map(function(e) { return shortItemName(e.item.name); }).join(", ");
+          var first = useSoon[0];
+          useSoonSub.textContent = first.daysLeft === 0 ? "오늘 안에 써 주세요" : "가장 급한 건 " + first.daysLeft + "일 남았어요";
         }
+
+        // 장보기
+        var groceryTitle = document.getElementById("nv-grocery-title");
+        var grocerySub = document.getElementById("nv-grocery-sub");
+        var toBuy = summary.shortEntries;
+        if (toBuy.length === 0) {
+          groceryTitle.textContent = "지금은 살 게 없어요";
+          grocerySub.textContent = "필요해지면 목록에 넣어 둘게요";
+        } else {
+          var est = toBuy.reduce(function(sum, e) { return sum + (Number(e.item.price) || 0); }, 0);
+          var store = mostCommonStore(toBuy);
+          groceryTitle.textContent = toBuy.length + "개 사야 해요";
+          grocerySub.textContent = "예상 " + formatMoney(est) + (store ? " · " + store : "");
+        }
+
+        renderHomeSuggestions(summary);
+      }
+
+      // 빠른 칩 (Figma: Suggestions — 요리 시작 / 외식 / 재료 소진 / 장보기 주문)
+      function renderHomeSuggestions(summary) {
+        var wrap = document.getElementById("nv-suggestions");
+        var chips = [
+          { label: "요리 시작", run: function() { goToTab("recipe"); } },
+          { label: "오늘 외식해", run: function() { openHomeChat("오늘 저녁은 외식해"); } }
+        ];
+        // 재료 소진 칩은 실제로 떨어져 가는 품목이 있을 때만 (빈 상태에서 가짜 예시를 보여주지 않음)
+        if (summary.shortEntries.length > 0) {
+          var outItem = shortItemName(summary.shortEntries[0].item.name);
+          chips.push({ label: outItem + " 다 떨어졌어", run: function() { openHomeChat(outItem + " 다 떨어졌어"); } });
+        }
+        chips.push({ label: "장보기 주문", run: function() { openShoppingList(); showToast("자동 주문은 준비 중이에요. 우선 장보기 목록을 보여 드릴게요."); } });
+        wrap.replaceChildren();
+        chips.forEach(function(chip) {
+          var btn = el("button", "nv-pill", chip.label);
+          btn.type = "button";
+          btn.addEventListener("click", chip.run);
+          wrap.appendChild(btn);
+        });
+      }
+
+      // 대화(Talk) 시트가 생기기 전까지는 기존 인벤토리 챗으로 보낸다
+      function openHomeChat(text) {
+        state.activeTab = "inventory";
+        state.subMode = "chat";
+        renderAll();
+        window.scrollTo(0, 0);
+        if (text) handleChatSubmit(text);
+      }
+
+      function openShoppingList() {
+        state.activeTab = "inventory";
+        state.subMode = "buy";
+        renderAll();
+        window.scrollTo(0, 0);
+      }
+
+      // 🎤 음성 입력 — 마이크를 누를 때만 듣는다 (상시 호출어 감지 없음, web/CLAUDE.md §1)
+      var homeRecognition = null;
+      function startHomeVoice() {
+        var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var input = document.getElementById("nv-composer-input");
+        var mic = document.getElementById("nv-mic");
+        if (!Recognition) {
+          showToast("이 브라우저는 음성 입력을 지원하지 않아요. 글로 입력해 주세요.");
+          input.focus();
+          return;
+        }
+        if (homeRecognition) {
+          homeRecognition.stop();
+          return;
+        }
+        homeRecognition = new Recognition();
+        homeRecognition.lang = "ko-KR";
+        homeRecognition.interimResults = true;
+        homeRecognition.maxAlternatives = 1;
+        mic.classList.add("is-listening");
+        mic.setAttribute("aria-label", "듣는 중 — 누르면 멈춰요");
+        var finalText = "";
+        homeRecognition.onresult = function(ev) {
+          var text = "";
+          for (var i = 0; i < ev.results.length; i++) {
+            text += ev.results[i][0].transcript;
+            if (ev.results[i].isFinal) finalText = text;
+          }
+          input.value = text;
+        };
+        homeRecognition.onerror = function(ev) {
+          if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+            showToast("마이크 권한이 필요해요. 설정에서 허용해 주세요.");
+          }
+        };
+        homeRecognition.onend = function() {
+          homeRecognition = null;
+          mic.classList.remove("is-listening");
+          mic.setAttribute("aria-label", "말로 하기");
+          var text = (finalText || input.value).trim();
+          if (text) {
+            input.value = "";
+            openHomeChat(text);
+          }
+        };
+        homeRecognition.start();
       }
 
       // ====================================================================
@@ -3119,6 +3556,15 @@
           chatSlot.appendChild(chatPanel);
         }
 
+        // 계정 칩: 홈에서는 메인 화면 상단, 다른 화면에서는 상단 내비게이션에 둔다
+        var authSlot = document.getElementById("auth-slot");
+        var authHome = state.activeTab === "home"
+          ? document.getElementById("nv-auth-dock")
+          : document.querySelector(".topnav-inner");
+        if (authSlot && authHome && authSlot.parentNode !== authHome) {
+          authHome.appendChild(authSlot);
+        }
+
         renderDayButtons();
         renderReceiptReviewEditor();
         renderReceiptDbLog();
@@ -3145,15 +3591,31 @@
         window.scrollTo(0, 0);
       }
       document.getElementById("nav-home-btn").addEventListener("click", function() { goToTab("home"); });
-      [["route-card-inventory", "inventory"], ["route-card-recipe", "recipe"]].forEach(function(pair) {
-        var card = document.getElementById(pair[0]);
-        card.addEventListener("click", function() { goToTab(pair[1]); });
-        card.addEventListener("keydown", function(ev) {
-          if (ev.key === "Enter" || ev.key === " ") {
-            ev.preventDefault();
-            goToTab(pair[1]);
-          }
-        });
+
+      // 🏠 메인 화면 이벤트
+      document.getElementById("nv-composer").addEventListener("submit", function(ev) {
+        ev.preventDefault();
+        var input = document.getElementById("nv-composer-input");
+        var text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        input.blur();
+        openHomeChat(text);
+      });
+      document.getElementById("nv-mic").addEventListener("click", startHomeVoice);
+      document.getElementById("nv-attach").addEventListener("click", function() { openReceiptPicker(); });
+      document.getElementById("nv-card-tonight").addEventListener("click", function() { goToTab("recipe"); });
+      document.getElementById("nv-card-usesoon").addEventListener("click", function() {
+        state.subMode = "inventory";
+        goToTab("inventory");
+      });
+      document.getElementById("nv-card-grocery").addEventListener("click", openShoppingList);
+      // 로그인/로그아웃 시 절약액 표시를 다시 그린다
+      if (window.NuvoriAuth && typeof window.NuvoriAuth.onChange === "function") {
+        window.NuvoriAuth.onChange(function() { renderHomeView(); });
+      }
+      document.getElementById("nv-savings").addEventListener("click", function() {
+        showToast("이번 주 절약액이에요. 아직 남아 있어서 다시 사지 않아도 되는 품목의 가격을 더했어요.");
       });
 
       // v2 인벤토리 헤더 버튼 / 사이드 패널
